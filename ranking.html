@@ -70,7 +70,7 @@
   <script type="text/javascript">
 
     $(function() {
-      $.getJSON("data/ranking.json", function(data) {
+      $.getJSON("data/ranking/ranking.json", function(data) {
         $("#ranking-header").append(" (" + data["date"] + ")");
         // Reverse-sort users
         var ranking = data["users"].sort(function(first, second) {
