@@ -78,7 +78,7 @@
         });
         $.each(ranking, function(i) {
           var rank = "<td>" + (i + 1) + "</td>";
-          var name = "<td>" + ranking[i]["name"] + "</td>";
+          var name = '<td style="word-break: break-word">' + ranking[i]["name"] + "</td>";
           var posts = "<td>" + ranking[i]["postings"] + "</td>";
 
           $("#ranking-table > tbody:last-child").append("<tr>" + rank + name + posts + "</tr>");
