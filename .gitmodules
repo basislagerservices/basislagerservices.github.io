@@ -1,4 +1,0 @@
-[submodule "data"]
-	path = data
-	url = https://github.com/basislagerservices/data.git
-	branch = main

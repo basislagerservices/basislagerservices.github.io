@@ -70,7 +70,8 @@
   <script type="text/javascript">
 
     $(function() {
-      $.getJSON("data/ranking/ranking.json", function(data) {
+      var ranking_json = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
+      $.getJSON(ranking_json, function(data) {
         $("#ranking-header").append(" (" + data["date"] + ")");
         // Reverse-sort users
         var ranking = data["users"].sort(function(first, second) {
