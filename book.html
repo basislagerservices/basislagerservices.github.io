@@ -32,11 +32,11 @@
                 href="index.html">Home</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link active"
+            <a class="nav-link"
                 href="ranking.html">Rangliste</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link"
+            <a class="nav-link active"
                 href="book.html">Buch</a>
           </li>
           <li class="nav-item">
@@ -51,45 +51,16 @@
   <div class="container">
     <div class="text-center mt-5">
       <h1>Seuchenticker-Basislager</h1>
-      <p class="lead"
-         id="ranking-header">Rangliste</p>
-      <table class="table"
-             id="ranking-table">
-        <thead>
-          <tr>
-            <th scope="col">#</th>
-            <th scope="col">Name</th>
-            <th scope="col">Postings</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+      <p class="lead">Ein Buch gibt es auch.</p>
+      <p>Aktuell ist es wahrscheinlich nicht, das dauert noch ein paar Tage.</p>
+      <div>
+        <a href="https://raw.githubusercontent.com/basislagerservices/data/main/book/logbook.epub">EPUB</a>
+        <br/>
+        <a href="https://raw.githubusercontent.com/basislagerservices/data/main/book/logbook.pdf">PDF</a>
+      </div>
     </div>
   </div>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="js/scripts.js"></script>
-  <script crossorigin="anonymous"
-        integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4="
-        src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script type="text/javascript">
-
-    $(function() {
-      var ranking_json = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
-      $.getJSON(ranking_json, function(data) {
-        $("#ranking-header").append(" (" + data["date"] + ")");
-        // Reverse-sort users
-        var ranking = data["users"].sort(function(first, second) {
-          return second["postings"] - first["postings"];
-        });
-        $.each(ranking, function(i) {
-          var rank = "<td>" + (i + 1) + "</td>";
-          var name = '<td style="word-break: break-word">' + ranking[i]["name"] + "</td>";
-          var posts = "<td>" + ranking[i]["postings"] + "</td>";
-
-          $("#ranking-table > tbody:last-child").append("<tr>" + rank + name + posts + "</tr>");
-        });
-      });
-    });
-  </script>
 </body>
 </html>
