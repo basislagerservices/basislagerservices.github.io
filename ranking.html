@@ -81,19 +81,29 @@
   <script type="text/javascript">
 
     $(function() {
-      var ranking_json = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
-      $.getJSON(ranking_json, function(data) {
-        $("#ranking-header").append(" (" + data["date"] + ")");
-        // Reverse-sort users
-        var ranking = data["users"].sort(function(first, second) {
-          return second["postings"] - first["postings"];
-        });
-        $.each(ranking, function(i) {
-          var rank = "<td>" + (i + 1) + "</td>";
-          var name = '<td style="word-break: break-word">' + ranking[i]["name"] + "</td>";
-          var posts = "<td>" + ranking[i]["postings"] + "</td>";
+      var ranking_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
+      var deleted_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json";
+      $.getJSON(ranking_path, function(ranking_data) {
+        $.getJSON(deleted_path, function(deleted) {
+          $("#ranking-header").append(" (" + ranking_data["date"] + ")");
+          // Reverse-sort users by number of postings.
+          var ranking = ranking_data["users"].sort(function(first, second) {
+            return second["postings"] - first["postings"];
+          });
+          $.each(ranking, function(i) {
+            var rankentry = "<td>" + (i + 1) + "</td>";
 
-          $("#ranking-table > tbody:last-child").append("<tr>" + rank + name + posts + "</tr>");
+            // Check if the user was deleted and if we know something about them.
+            var id = ranking[i]["id"];
+            if (id in deleted)
+              var nameentry = '<td style="word-break: break-word">' + deleted[id] + " (gelöscht)" + "</td>";
+            else
+              var nameentry = '<td style="word-break: break-word">' + ranking[i]["name"] + "</td>";
+
+            var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
+
+            $("#ranking-table > tbody:last-child").append("<tr>" + rankentry + nameentry + postsentry + "</tr>");
+          });
         });
       });
     });
