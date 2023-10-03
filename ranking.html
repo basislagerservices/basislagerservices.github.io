@@ -95,14 +95,17 @@
 
             // Check if the user was deleted and if we know something about them.
             var id = ranking[i]["id"];
-            if (id in deleted)
-              var nameentry = '<td style="word-break: break-word">' + deleted[id] + " (gelöscht)" + "</td>";
-            else
-              var nameentry = '<td style="word-break: break-word">' + ranking[i]["name"] + "</td>";
-
+            var name = ranking[i]["name"];
+            var font_class = "";
+            if (name == "gelöschter User") {
+              font_class = 'class="table-danger"';
+              if (id in deleted)
+                name = deleted[id];
+            }
+            var nameentry = '<td style="word-break: break-word">' + name + "</td>";
             var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
 
-            $("#ranking-table > tbody:last-child").append("<tr>" + rankentry + nameentry + postsentry + "</tr>");
+            $("#ranking-table > tbody:last-child").append("<tr " + font_class + ">"+ rankentry + nameentry + postsentry + "</tr>");
           });
         });
       });
