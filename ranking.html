@@ -83,29 +83,41 @@
     $(function() {
       var ranking_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
       var deleted_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json";
+      var goldstar_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/goldstar.json";
       $.getJSON(ranking_path, function(ranking_data) {
         $.getJSON(deleted_path, function(deleted) {
-          $("#ranking-header").append(" (" + ranking_data["date"] + ")");
-          // Reverse-sort users by number of postings.
-          var ranking = ranking_data["users"].sort(function(first, second) {
-            return second["postings"] - first["postings"];
-          });
-          $.each(ranking, function(i) {
-            var rankentry = "<td>" + (i + 1) + "</td>";
+          $.getJSON(goldstar_path, function(goldstar) {
+            $("#ranking-header").append(" (" + ranking_data["date"] + ")");
+            // Reverse-sort users by number of postings.
+            var ranking = ranking_data["users"].sort(function(first, second) {
+              return second["postings"] - first["postings"];
+            });
+            $.each(ranking, function(i) {
+              var rankentry = "<td>" + (i + 1) + "</td>";
 
-            // Check if the user was deleted and if we know something about them.
-            var id = ranking[i]["id"];
-            var name = ranking[i]["name"];
-            var font_class = "";
-            if (name == "gelöschter User") {
-              font_class = 'class="table-danger"';
-              if (id in deleted)
-                name = deleted[id];
-            }
-            var nameentry = '<td style="word-break: break-word">' + name + "</td>";
-            var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
+              // Check if the user was deleted and if we know something about them.
+              var id = ranking[i]["id"];
+              var name = ranking[i]["name"];
+              var font_class = "";
+              if (name == "gelöschter User") {
+                font_class = 'class="table-danger"';
+                if (id in deleted)
+                  name = deleted[id];
+              }
+              // Add stars because everyone loves stars!
+              if (name in goldstar)
+                var stars = goldstar[name];
+              else if (id in goldstar)
+                var stars = goldstar[id];
+              else
+                var stars = 0;
+              name += " " + "⭐".repeat(stars);
 
-            $("#ranking-table > tbody:last-child").append("<tr " + font_class + ">"+ rankentry + nameentry + postsentry + "</tr>");
+              var nameentry = '<td style="word-break: break-word">' + name + "</td>";
+              var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
+
+              $("#ranking-table > tbody:last-child").append("<tr " + font_class + ">"+ rankentry + nameentry + postsentry + "</tr>");
+            });
           });
         });
       });
