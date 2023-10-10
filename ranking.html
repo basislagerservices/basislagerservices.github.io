@@ -111,7 +111,10 @@
                 var stars = goldstar[id];
               else
                 var stars = 0;
-              name += " " + "⭐".repeat(stars);
+
+              var left = Math.floor(stars / 2);
+              var right = stars - left;
+              name = "⭐".repeat(left) + " " + name + " " + "⭐".repeat(right);
 
               var nameentry = '<td style="word-break: break-word">' + name + "</td>";
               var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
