@@ -113,7 +113,7 @@
       let userInput = document.getElementById("postle-user-input");
       var autocomplete = new Awesomplete(userInput, {
         list: users.map((u) => [utils.escapeHTML(u), u]),
-        maxItems: 5,
+        maxItems: 15,
 
         // See: https://github.com/LeaVerou/awesomplete/issues/17071#issuecomment-507955204
         container: function (input) {
@@ -156,14 +156,20 @@
 
     $(function () {
       let postingsPath = "https://raw.githubusercontent.com/basislagerservices/data/main/postle/postings.json";
-      let usersPath = "https://raw.githubusercontent.com/basislagerservices/data/main/postle/users.json";
+      let rankingPath = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
+      let deletedPath = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json";
 
       let postingsPromise = $.getJSON(postingsPath);
-      let usersPromise = $.getJSON(usersPath);
+      let rankingPromise = $.getJSON(rankingPath);
+      let deletedPromise = $.getJSON(deletedPath);
 
-      $.when(postingsPromise, usersPromise).then(function (postings, users) {
-        // Get userlist and the posting of the day.
-        users = users[0];
+      $.when(postingsPromise, rankingPromise, deletedPromise).then(function (postings, ranking, deleted) {
+        // Get the user list by combining the ranking and deleted users.
+        // This way players can lookup options in the ranking.
+        let rankingUsers = new Set(ranking[0]["users"].map((u) => u["name"]));
+        let deletedUsers = new Set(Object.values(deleted[0]));
+        let users = Array.from(new Set([...rankingUsers, ...deletedUsers]));
+
         let date = (new Date()).toISOString().split("T")[0];
         let posting = postings[0][date];
 
