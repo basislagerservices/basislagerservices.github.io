@@ -81,14 +81,8 @@
     <!-- Guesses -->
     <div>
       <div class="row justify-content-center">
-        <div class="rounded fw-bold">
-          <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-0"></div>
-          <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-1"></div>
-          <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-2"></div>
-          <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-3"></div>
-          <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-4"></div>
-          <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-5"></div>
-
+        <div class="fw-bold">
+          <div id="postle-guesses"></div>
           <div class="row">
             <input type="text" class="form-control" id="postle-user-input" placeholder="Wer hat das geschrieben?">
           </div>
@@ -102,22 +96,70 @@
   <script crossorigin="anonymous"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
         src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js" integrity="sha512-HcBl0GSJvt4Qecm4srHapirUx0HJDi2zYXm6KUKNNUGdTIN9cBwakVZHWmRVj4MKgy1AChqhWGYcMDbRKgO0zg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-  <script type="text/javascript">
-    /* Escape characters used in HTML and replace newlines. */
-    function escapeHTML(text) {
-      if (!text)
-        return text;
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js"
+        integrity="sha512-HcBl0GSJvt4Qecm4srHapirUx0HJDi2zYXm6KUKNNUGdTIN9cBwakVZHWmRVj4MKgy1AChqhWGYcMDbRKgO0zg=="
+        crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
+  <script type="module">
+    import * as utils from "./js/utils.js";
 
-      // The order here is important to avoid re-escaping characters.
-      text = text.replaceAll("&", "&amp;");
-      text = text.replaceAll("<", "&lt;");
-      text = text.replaceAll(">", "&gt;");
-      text = text.replaceAll("\"", "&quot;");
-      text = text.replaceAll("\r\n", "<br>");
-      text = text.replaceAll("\n", "<br>");
+    const NUMBER_OF_GUESSES = 6;
+    const STORAGE_KEY = "postle.games";
 
-      return text;
+    // Populate the empty posting field and create the input field and empty guesses.
+    function setupUI(posting, users) {
+      // Render the posting.
+      let rating = posting["downvotes"] + " 🟥 🟩 " + posting["upvotes"];
+
+      document.getElementById("postle-title").innerHTML = utils.escapeHTML(posting["title"]);
+      document.getElementById("postle-message").innerHTML = utils.escapeHTML(posting["message"]);
+      document.getElementById("postle-rating").innerHTML = rating;
+
+      // Dynamically create fields for tries to avoid hardcoding everything.
+      let guesses = document.getElementById("postle-guesses");
+      for (let i = 0; i < NUMBER_OF_GUESSES; i++) {
+        let entry = `<div class="row row-guess my-2 py-2 ps-3 bg-guess rounded" id="postle-guess-${i}"></div>`
+        guesses.insertAdjacentHTML("beforeend", entry);
+      }
+
+      // Setup autocomplete for user input.
+      let userInput = document.getElementById("postle-user-input");
+      var autocomplete = new Awesomplete(userInput, {
+        list: users.map((u) => [utils.escapeHTML(u), u]),
+        maxItems: 5,
+
+        // See: https://github.com/LeaVerou/awesomplete/issues/17071#issuecomment-507955204
+        container: function(input) {
+          input.parentNode.className = input.parentNode.className + " awesomplete";
+          input.parentNode.style.display = "block";
+          return input.parentNode;
+        }
+      });
+    }
+
+    function GameState(date) {
+      this.guesses = [];
+      this.solved = false;
+      this.max_guesses = NUMBER_OF_GUESSES; // Keep track of this in case we change it.
+    }
+
+    function renderState(state) {
+      // Set guesses.
+      for (let i = 0; i < state.guesses.length; i++) {
+        let element = document.getElementById("postle-guess-" + i);
+        element.innerHTML = state.guesses[i];
+      }
+      // Set state of the input field.
+      let userInput = document.getElementById("postle-user-input");
+      if (state.solved) {
+        userInput.disabled = true;
+        userInput.placeholder = "";
+        userInput.classList.add("bg-success");
+      } else if (state.guesses.length === state.max_guesses) {
+        userInput.disabled = true;
+        userInput.placeholder = "";
+        userInput.classList.add("bg-danger");
+      }
     }
 
     $(function() {
@@ -130,26 +172,43 @@
       let usersPromise = $.getJSON(usersPath);
 
       $.when(postingsPromise, usersPromise).then(function(postings, users) {
-        // Render the posting.
+        // Get userlist and the posting of the day.
+        users = users[0];
         let date = (new Date()).toISOString().split("T")[0];
         let posting = postings[0][date];
-        let rating = posting["downvotes"] + " 🟥 🟩 " + posting["upvotes"];
 
-        document.getElementById("postle-title").innerHTML = escapeHTML(posting["title"]);
-        document.getElementById("postle-message").innerHTML = escapeHTML(posting["message"]);
-        document.getElementById("postle-rating").innerHTML = rating;
+        setupUI(posting, users);
 
-        // Setup autocomplete for user input.
-        let userInput = document.getElementById("postle-user-input");
-        var autocomplete = new Awesomplete(userInput, {
-          list: users[0].map((u) => [escapeHTML(u), u]),
-          // See: https://github.com/LeaVerou/awesomplete/issues/17071#issuecomment-507955204
-          container: function(input) {
-            input.parentNode.className = input.parentNode.className + " awesomplete";
-            input.parentNode.style.display = "block";
-            return input.parentNode;
+        // Setup the game dictionary. This contains all games in storage.
+        let games = {};
+        let storage = localStorage.getItem(STORAGE_KEY);
+        if (storage == null) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({}));
+        } else {
+          games = JSON.parse(storage);
+        }
+
+        if (!(date in games))
+          games[date] = new GameState();
+        renderState(games[date]);
+
+        // Handle submissions in the user input field.
+        let userInput = document.getElementById("postle-user-input")
+        userInput.onkeypress = function(e) {
+          if (e.key === "Enter") {
+            // Submit if the guess is allowed.
+            let guess = userInput.value;
+            if (users.includes(guess)) {
+              userInput.value = ""
+              games[date].guesses.push(guess);
+              if (posting.user == guess)
+                games[date].solved = true;
+
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
+              renderState(games[date]);
+            }
           }
-        });
+        };
       });
     });
   </script>
