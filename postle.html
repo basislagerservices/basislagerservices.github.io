@@ -124,10 +124,11 @@
       });
     }
 
-    function GameState(date) {
+    function GameState(posting) {
       this.guesses = [];
       this.solved = false;
       this.max_guesses = NUMBER_OF_GUESSES; // Keep track of this in case we change it.
+      this.solution = posting;
     }
 
     function renderState(state) {
@@ -142,10 +143,14 @@
         userInput.disabled = true;
         userInput.placeholder = "";
         userInput.classList.add("bg-success");
+        userInput.value = "Lösung: " + state.solution.user;
+        userInput.classList.add("fw-bold", "text-muted");
       } else if (state.guesses.length === state.max_guesses) {
         userInput.disabled = true;
         userInput.placeholder = "";
         userInput.classList.add("bg-danger");
+        userInput.value = "Lösung: " + state.solution.user;
+        userInput.classList.add("fw-bold", "text-muted");
       }
     }
 
@@ -181,7 +186,7 @@
         }
 
         if (!(date in games))
-          games[date] = new GameState();
+          games[date] = new GameState(posting);
         renderState(games[date]);
 
         // Handle submissions in the user input field.
