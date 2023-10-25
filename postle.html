@@ -71,7 +71,12 @@
         <div class="fw-bold">
           <div id="postle-guesses"></div>
           <div class="row">
-            <input type="text" class="form-control" id="postle-user-input" placeholder="Wer hat das geschrieben?">
+            <div class="col row pe-3 w-100">
+              <input type="text" class="form-control" id="postle-user-input" placeholder="Wer hat das geschrieben?">
+            </div>
+            <div class="col-3 row">
+              <button type="button" class="btn btn-primary" id="postle-user-input-submit">Rate</button>
+            </div>
           </div>
         </div>
       </div>
@@ -193,23 +198,29 @@
           games[date] = new GameState(posting);
         renderState(games[date]);
 
-        // Handle submissions in the user input field.
-        let userInput = document.getElementById("postle-user-input")
-        userInput.onkeypress = function (e) {
-          if (e.key === "Enter") {
-            // Submit if the guess is allowed.
-            let guess = userInput.value;
-            if (users.includes(guess)) {
-              userInput.value = ""
-              games[date].guesses.push(guess);
-              if (posting.user == guess)
-                games[date].solved = true;
+        // Handle submissions in the user input field and the button clicks.
+        let userInput = document.getElementById("postle-user-input");
+        let userSubmit = document.getElementById("postle-user-input-submit");
 
-              localStorage.setItem(STORAGE_KEY_GAMES, JSON.stringify(games));
-              renderState(games[date]);
-            }
+        function submitGuess() {
+          let guess = userInput.value;
+          let g = games[date];
+          if (users.includes(guess) && !g.solved && g.guesses.length < g.max_guesses) {
+            userInput.value = ""
+            games[date].guesses.push(guess);
+            if (posting.user == guess)
+              games[date].solved = true;
+
+            localStorage.setItem(STORAGE_KEY_GAMES, JSON.stringify(games));
+            renderState(games[date]);
           }
+        }
+        userInput.onkeypress = function (e) {
+          if (e.key === "Enter")
+            submitGuess();
         };
+        userSubmit.onclick = submitGuess;
+
       });
     });
   </script>
