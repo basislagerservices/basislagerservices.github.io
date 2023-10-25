@@ -155,10 +155,8 @@
     }
 
     $(function () {
-      //var postingsPath = "https://raw.githubusercontent.com/basislagerservices/data/main/postle/postings.json";
-      //var usersPath = "https://raw.githubusercontent.com/basislagerservices/data/main/postle/users.json";
-      let postingsPath = "assets/postle-postings.json";
-      let usersPath = "assets/postle-users.json";
+      let postingsPath = "https://raw.githubusercontent.com/basislagerservices/data/main/postle/postings.json";
+      let usersPath = "https://raw.githubusercontent.com/basislagerservices/data/main/postle/users.json";
 
       let postingsPromise = $.getJSON(postingsPath);
       let usersPromise = $.getJSON(usersPath);
