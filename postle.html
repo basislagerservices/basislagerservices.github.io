@@ -16,6 +16,7 @@
         href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
         integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN"
         rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.css" integrity="sha512-RT/9M3vzjYojy97YiNTZbyrQ4nJ+gNoinZKTGSVvLITijfQIAIDNicUe+U2KaeOWo9j7IbRzRisx/7eglOc+wA==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link href="css/style.css" rel="stylesheet">
 </head>
 <body>
@@ -88,8 +89,8 @@
           <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-4"></div>
           <div class="row row-guess my-2 p-2 bg-guess rounded" id="postle-guess-5"></div>
 
-          <div class="row row-guess rounded">
-            <input type="text" class="form-control" id="postle-guess-input" placeholder="Wer hat das geschrieben?">
+          <div class="row">
+            <input type="text" class="form-control" id="postle-user-input" placeholder="Wer hat das geschrieben?">
           </div>
         </div>
       </div>
@@ -101,9 +102,10 @@
   <script crossorigin="anonymous"
         integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
         src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/awesomplete/1.1.5/awesomplete.min.js" integrity="sha512-HcBl0GSJvt4Qecm4srHapirUx0HJDi2zYXm6KUKNNUGdTIN9cBwakVZHWmRVj4MKgy1AChqhWGYcMDbRKgO0zg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script type="text/javascript">
     /* Escape characters used in HTML and replace newlines. */
-    function renderText(text) {
+    function escapeHTML(text) {
       if (!text)
         return text;
 
@@ -111,6 +113,7 @@
       text = text.replaceAll("&", "&amp;");
       text = text.replaceAll("<", "&lt;");
       text = text.replaceAll(">", "&gt;");
+      text = text.replaceAll("\"", "&quot;");
       text = text.replaceAll("\r\n", "<br>");
       text = text.replaceAll("\n", "<br>");
 
@@ -127,14 +130,27 @@
       let usersPromise = $.getJSON(usersPath);
 
       $.when(postingsPromise, usersPromise).then(function(postings, users) {
+        // Render the posting.
         let date = (new Date()).toISOString().split("T")[0];
         let posting = postings[0][date];
         let rating = posting["downvotes"] + " 🟥 🟩 " + posting["upvotes"];
 
-        document.getElementById("postle-title").innerHTML = renderText(posting["title"]);
-        document.getElementById("postle-message").innerHTML = renderText(posting["message"]);
+        document.getElementById("postle-title").innerHTML = escapeHTML(posting["title"]);
+        document.getElementById("postle-message").innerHTML = escapeHTML(posting["message"]);
         document.getElementById("postle-rating").innerHTML = rating;
-      })
+
+        // Setup autocomplete for user input.
+        let userInput = document.getElementById("postle-user-input");
+        var autocomplete = new Awesomplete(userInput, {
+          list: users[0].map((u) => [escapeHTML(u), u]),
+          // See: https://github.com/LeaVerou/awesomplete/issues/17071#issuecomment-507955204
+          container: function(input) {
+            input.parentNode.className = input.parentNode.className + " awesomplete";
+            input.parentNode.style.display = "block";
+            return input.parentNode;
+          }
+        });
+      });
     });
   </script>
 </body>
