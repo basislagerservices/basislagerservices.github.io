@@ -9,3 +9,8 @@
 .row-guess {
     min-height: 2.5rem;
 }
+
+.awesomplete > ul {
+    max-height: 12rem;
+    overflow-y: auto;
+}
