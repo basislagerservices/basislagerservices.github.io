@@ -1,0 +1,11 @@
+.bg-posting {
+    background-color: #aed4ae;
+}
+
+.bg-guess {
+    background-color: rgb(229 231 235);
+}
+
+.row-guess {
+    min-height: 2.5rem;
+}
