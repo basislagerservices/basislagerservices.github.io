@@ -88,7 +88,10 @@
     import * as utils from "./js/utils.js";
 
     const NUMBER_OF_GUESSES = 6;
-    const STORAGE_KEY = "postle.games";
+    const STORAGE_KEY_GAMES = "postle.games";
+    // Used to invalidate the storage if something changes.
+    const STORAGE_VERSION = "0";
+    const STORAGE_KEY_VERSION = "postle.version";
 
     // Populate the empty posting field and create the input field and empty guesses.
     function setupUI(posting, users) {
@@ -164,10 +167,15 @@
         setupUI(posting, users);
 
         // Setup the game dictionary. This contains all games in storage.
+        let storageVersion = localStorage.getItem(STORAGE_KEY_VERSION);
+        if (storageVersion != STORAGE_VERSION)
+          localStorage.removeItem(STORAGE_KEY_GAMES);
+        localStorage.setItem(STORAGE_KEY_VERSION, STORAGE_VERSION);
+
         let games = {};
-        let storage = localStorage.getItem(STORAGE_KEY);
+        let storage = localStorage.getItem(STORAGE_KEY_GAMES);
         if (storage == null) {
-          localStorage.setItem(STORAGE_KEY, JSON.stringify({}));
+          localStorage.setItem(STORAGE_KEY_GAMES, JSON.stringify({}));
         } else {
           games = JSON.parse(storage);
         }
@@ -188,7 +196,7 @@
               if (posting.user == guess)
                 games[date].solved = true;
 
-              localStorage.setItem(STORAGE_KEY, JSON.stringify(games));
+              localStorage.setItem(STORAGE_KEY_GAMES, JSON.stringify(games));
               renderState(games[date]);
             }
           }
