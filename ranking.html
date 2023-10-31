@@ -104,10 +104,9 @@
           else
             var stars = 0;
 
-          var left = Math.floor(stars / 2);
-          var right = stars - left;
-          name = "⭐".repeat(left) + " " + name + " " + "⭐".repeat(right);
-
+          if (stars !== 0) {
+            name += " ⭐" + " (x" + stars + ")";
+          }
           var nameentry = '<td style="word-break: break-word">' + name + "</td>";
           var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
 
