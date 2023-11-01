@@ -69,15 +69,17 @@
     $(function () {
       var ranking_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
       var deleted_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json";
+      var deletedAuto_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted-auto.json";
       var goldstar_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/goldstar.json";
 
       let rankingPromise = $.getJSON(ranking_path);
       let deletedPromise = $.getJSON(deleted_path);
+      let deletedAutoPromise = $.getJSON(deletedAuto_path);
       let goldstarPromise = $.getJSON(goldstar_path);
 
-      $.when(rankingPromise, deletedPromise, goldstarPromise).then(function (ranking_data, deleted, goldstar) {
+      $.when(rankingPromise, deletedPromise, deletedAutoPromise, goldstarPromise).then(function (ranking_data, deleted, deletedAuto, goldstar) {
         ranking_data = ranking_data[0];
-        deleted = deleted[0];
+        deleted = { ...deleted[0], ...deletedAuto[0] };
         goldstar = goldstar[0];
         $("#ranking-header").append(" (" + ranking_data["date"] + ")");
         // Reverse-sort users by number of postings.
