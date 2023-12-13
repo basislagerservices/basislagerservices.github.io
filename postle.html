@@ -63,17 +63,20 @@
       let postingsPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/postle/postings.json';
       let rankingPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json';
       let deletedPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json';
+      let autoDeletedPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted-auto.json';
 
       let postingsPromise = $.getJSON(postingsPath);
       let rankingPromise = $.getJSON(rankingPath);
       let deletedPromise = $.getJSON(deletedPath);
+      let autoDeletedPromise = $.getJSON(autoDeletedPath);
 
-      $.when(postingsPromise, rankingPromise, deletedPromise).then(function (postings, ranking, deleted) {
+      $.when(postingsPromise, rankingPromise, deletedPromise, autoDeletedPromise).then(function (postings, ranking, deleted, autoDeleted) {
         // Get the user list by combining the ranking and deleted users.
         // This way players can lookup options in the ranking.
         let rankingUsers = new Set(ranking[0]['users'].map((u) => u['name']));
         let deletedUsers = new Set(Object.values(deleted[0]));
-        let users = Array.from(new Set([...rankingUsers, ...deletedUsers]));
+        let autoDeletedUsers = new Set(Object.values(autoDeleted[0]));
+        let users = Array.from(new Set([...rankingUsers, ...deletedUsers, ...autoDeletedUsers]));
 
         postings = postings[0];
 
