@@ -17,26 +17,13 @@
 
 
 import * as utils from './utils.js';
+import * as P from './posting.js';
 
 
 // HTML elements that are added to the main container.
 const postleHTML = `
   <!-- Posting -->
-  <div>
-    <div class="row justify-content-center mt-2">
-      <div class="p-3 bg-posting rounded text-start">
-        <div class="row">
-          <div class="col text-end" id="postle-rating"></div>
-        </div>
-        <div class="row">
-          <div class="col fw-bold text-start" id="postle-title"></div>
-        </div>
-        <div class="row">
-          <div class="col" id="postle-message"></div>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="postle-posting"></div>
 
   <!-- Guesses -->
   <div>
@@ -68,11 +55,7 @@ function setupUI(container, posting, users) {
   container.innerHTML = postleHTML;
 
   // Render the posting.
-  let rating = posting['downvotes'] + ' 🟥 🟩 ' + posting['upvotes'];
-
-  document.getElementById('postle-title').innerHTML = utils.escapeHTML(posting['title']);
-  document.getElementById('postle-message').innerHTML = utils.escapeHTML(posting['message']);
-  document.getElementById('postle-rating').innerHTML = rating;
+  P.renderPosting(document.getElementById('postle-posting'), posting);
 
   // Dynamically create fields for tries to avoid hardcoding everything.
   let guesses = document.getElementById('postle-guesses');
