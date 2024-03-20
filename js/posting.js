@@ -86,6 +86,9 @@ export function renderPosting(container, posting, hide) {
     container.getElementsByClassName('posting-rating')[0].innerHTML = rating;
   }
 
-  container.getElementsByClassName('posting-title')[0].innerHTML = utils.escapeHTML(posting['title']);
-  container.getElementsByClassName('posting-message')[0].innerHTML = utils.escapeHTML(posting['message']);
+  if ('title' in posting)
+    container.getElementsByClassName('posting-title')[0].innerHTML = utils.escapeHTML(posting['title']);
+
+  if ('message' in posting)
+    container.getElementsByClassName('posting-message')[0].innerHTML = utils.escapeHTML(posting['message']);
 }
