@@ -71,16 +71,20 @@
       var deleted_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json";
       var deletedAuto_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted-auto.json";
       var goldstar_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/goldstar.json";
+      var excluded_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/excluded.json";
 
       let rankingPromise = $.getJSON(ranking_path);
       let deletedPromise = $.getJSON(deleted_path);
       let deletedAutoPromise = $.getJSON(deletedAuto_path);
       let goldstarPromise = $.getJSON(goldstar_path);
+      let excludedPromise = $.getJSON(excluded_path);
 
-      $.when(rankingPromise, deletedPromise, deletedAutoPromise, goldstarPromise).then(function (ranking_data, deleted, deletedAuto, goldstar) {
+      $.when(rankingPromise, deletedPromise, deletedAutoPromise, goldstarPromise, excludedPromise).then(function (ranking_data, deleted, deletedAuto, goldstar, excluded) {
         ranking_data = ranking_data[0];
         deleted = { ...deleted[0], ...deletedAuto[0] };
         goldstar = goldstar[0];
+        excluded = excluded[0];
+
         $("#ranking-header").append(" (" + ranking_data["date"] + ")");
         // Reverse-sort users by number of postings.
         var ranking = ranking_data["users"].sort(function (first, second) {
@@ -109,6 +113,12 @@
           if (stars !== 0) {
             name += " ⭐" + " (x" + stars + ")";
           }
+          // Delete the name and mark it orange if the user was excluded.
+          if (excluded.indexOf(name) >= 0 || excluded.indexOf(id) >= 0) {
+            name = "";
+            font_class = 'class="table-warning"';
+          }
+
           var nameentry = '<td style="word-break: break-word">' + name + "</td>";
           var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
 
