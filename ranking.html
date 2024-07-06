@@ -56,14 +56,12 @@
           <li class="nav-item">
             <a class="nav-link active" id="postings-tab" data-bs-toggle="tab" href="#postings">Postings</a>
           </li>
-          <!--
           <li class="nav-item">
-            <a class="nav-link" id="green-total-tab" data-bs-toggle="tab" href="#green-total">Grün (gesamt)</a>
+            <a class="nav-link" id="green-total-tab" data-bs-toggle="tab" href="#green-total">Grün</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" id="red-total-tab" data-bs-toggle="tab" href="#red-total">Rot (gesamt)</a>
+            <a class="nav-link" id="red-total-tab" data-bs-toggle="tab" href="#red-total">Rot</a>
           </li>
-          -->
         </ul>
 
         <!-- Tab panes -->
@@ -80,7 +78,6 @@
               <tbody></tbody>
             </table>
           </div>
-          <!--
           <div class="tab-pane fade" id="green-total">
             <table class="table" id="green-total-table">
               <thead>
@@ -105,7 +102,6 @@
               <tbody></tbody>
             </table>
           </div>
-          -->
         </div>
       </div>
     </div>
@@ -135,22 +131,26 @@
         excluded = excluded[0];
 
         $("#ranking-header").append(" (" + ranking_data["date"] + ")");
-        // Reverse-sort users by number of postings.
-        var ranking = ranking_data["users"].sort(function (first, second) {
-          return second["postings"] - first["postings"];
-        });
-        $.each(ranking, function (i) {
-          var rankentry = "<td>" + (i + 1) + "</td>";
 
-          // Check if the user was deleted and if we know something about them.
-          var id = ranking[i]["id"];
-          var name = ranking[i]["name"];
+        // Create the i-th entry row the ranking.
+        // This function takes the index i, the ranked data and a function to extract
+        // the value to display from the entry.
+        // It returns the entire row between <tr> tags.
+        function create_row(i, data, value_func) {
+          var rankentry = "<td>" + (i + 1) + "</td>";
+          var entry = data[i];
+
+          var id = entry["id"];
+          var name = entry["name"];
+
+          // Check if the user was deleted.
           var font_class = "";
           if (name == "gelöschter User") {
             font_class = 'class="table-danger"';
             if (id in deleted)
               name = deleted[id];
           }
+
           // Add stars because everyone loves stars!
           if (name in goldstar)
             var stars = goldstar[name];
@@ -162,6 +162,7 @@
           if (stars !== 0) {
             name += " ⭐" + " (x" + stars + ")";
           }
+
           // Delete the name and mark it orange if the user was excluded.
           if (excluded.indexOf(name) >= 0 || excluded.indexOf(id) >= 0) {
             name = "";
@@ -169,9 +170,34 @@
           }
 
           var nameentry = '<td style="word-break: break-word">' + name + "</td>";
-          var postsentry = "<td>" + ranking[i]["postings"] + "</td>";
+          var valueentry = "<td>" + value_func(entry) + "</td>";
 
-          $("#postings-table > tbody:last-child").append("<tr " + font_class + ">" + rankentry + nameentry + postsentry + "</tr>");
+          return "<tr " + font_class + ">" + rankentry + nameentry + valueentry + "</tr>"
+        }
+
+        // Create sorted rankings.
+        var postings = ranking_data["users"].toSorted(function (first, second) {
+          return second["postings"] - first["postings"];
+        });
+        var green_total = ranking_data["users"].toSorted(function (first, second) {
+          return second["upvotes"] - first["upvotes"];
+        });
+        var red_total = ranking_data["users"].toSorted(function (first, second) {
+          return second["downvotes"] - first["downvotes"];
+        });
+
+        // Add rankings to tables.
+        $.each(postings, function (i) {
+          var row = create_row(i, postings, function (e) { return e["postings"]; })
+          $("#postings-table > tbody:last-child").append(row);
+        });
+        $.each(green_total, function (i) {
+          var row = create_row(i, green_total, function (e) { return e["upvotes"]; })
+          $("#green-total-table > tbody:last-child").append(row);
+        });
+        $.each(red_total, function (i) {
+          var row = create_row(i, red_total, function (e) { return e["downvotes"]; })
+          $("#red-total-table > tbody:last-child").append(row);
         });
       });
     });
