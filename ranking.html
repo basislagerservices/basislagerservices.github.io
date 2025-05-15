@@ -1,201 +1,214 @@
 <!DOCTYPE html>
 <html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport" />
+    <meta content="" name="Lustiges aus dem Ticker-Basislager" />
+    <meta content="" name="Basislager Services" />
+    <title>Ticker-Basislager</title>
+    <link href="assets/favicon.png" rel="icon" type="image/x-icon" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      crossorigin="anonymous"
+    />
+  </head>
 
-<head>
-  <meta charset="utf-8">
-  <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
-  <meta content="" name="Lustiges aus dem Ticker-Basislager">
-  <meta content="" name="Basislager Services">
-  <title>Ticker-Basislager</title>
-  <link href="assets/favicon.png" rel="icon" type="image/x-icon">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-    crossorigin="anonymous">
-</head>
-
-<body>
-  <!-- TODO: figure out how to avoid copying this everywhere. -->
-  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-    <div class="container">
-      <a class="navbar-brand" href="index.html">Ticker-Basislager</a> <button class="navbar-toggler"
-        data-bs-target="#navbarSupportedContent" data-bs-toggle="collapse" type="button"><span
-          class="navbar-toggler-icon"></span></button>
-      <div class="collapse navbar-collapse" id="navbarSupportedContent">
-        <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-          <li class="nav-item">
-            <a class="nav-link" href="index.html">Home</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link active" href="ranking.html">Rangliste</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="postle.html">Postle</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="books.html">Bücher</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="magnus.html">Magnus</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="tickermap.html" target="_blank">Karte</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" href="ticker.html" target="_blank">Ticker</a>
-          </li>
-        </ul>
+  <body>
+    <!-- TODO: figure out how to avoid copying this everywhere. -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="container">
+        <a class="navbar-brand" href="index.html">Ticker-Basislager</a>
+        <button class="navbar-toggler" data-bs-target="#navbarSupportedContent" data-bs-toggle="collapse" type="button">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link" href="index.html">Home</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="ranking.html">Rangliste</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="postle.html">Postle</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="books.html">Bücher</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="magnus.html">Magnus</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="tickermap.html" target="_blank">Karte</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="ticker.html" target="_blank">Ticker</a>
+            </li>
+          </ul>
+        </div>
       </div>
-    </div>
-  </nav>
-  <div class="container">
-    <div class="text-center mt-5">
-      <h1>Ticker-Basislager</h1><noscript>
-        <p style="background:orangered">JavaScript aktivieren, sonst wird das wahrscheinlich nichts!</p>
-      </noscript>
-      <p class="lead" id="ranking-header">Rangliste</p>
+    </nav>
+    <div class="container">
+      <div class="text-center mt-5">
+        <h1>Ticker-Basislager</h1>
+        <noscript>
+          <p style="background: orangered">JavaScript aktivieren, sonst wird das wahrscheinlich nichts!</p>
+        </noscript>
+        <p class="lead" id="ranking-header">Rangliste</p>
 
-      <div class="container mt-5">
-        <!-- Nav tabs -->
-        <ul class="nav nav-tabs" id="myTab">
-          <li class="nav-item">
-            <a class="nav-link active" id="postings-tab" data-bs-toggle="tab" href="#postings">Postings</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="green-total-tab" data-bs-toggle="tab" href="#green-total">Grün (erhalten)</a>
-          </li>
-          <li class="nav-item">
-            <a class="nav-link" id="red-total-tab" data-bs-toggle="tab" href="#red-total">Rot (erhalten)</a>
-          </li>
-        </ul>
+        <div class="container mt-5">
+          <!-- Nav tabs -->
+          <ul class="nav nav-tabs" id="myTab">
+            <li class="nav-item">
+              <a class="nav-link active" id="postings-tab" data-bs-toggle="tab" href="#postings">Postings</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="green-total-tab" data-bs-toggle="tab" href="#green-total">Grün (erhalten)</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" id="red-total-tab" data-bs-toggle="tab" href="#red-total">Rot (erhalten)</a>
+            </li>
+          </ul>
 
-        <!-- Tab panes -->
-        <div class="tab-content">
-          <div class="tab-pane fade show active" id="postings">
-            <table class="table" id="postings-table">
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Postings</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-          <div class="tab-pane fade" id="green-total">
-            <table class="table" id="green-total-table">
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Stricherl</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-          <div class="tab-pane fade" id="red-total">
-            <table class="table" id="red-total-table">
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Name</th>
-                  <th scope="col">Stricherl</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
+          <!-- Tab panes -->
+          <div class="tab-content">
+            <div class="tab-pane fade show active" id="postings">
+              <table class="table" id="postings-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Postings</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="tab-pane fade" id="green-total">
+              <table class="table" id="green-total-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Stricherl</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
+            <div class="tab-pane fade" id="red-total">
+              <table class="table" id="red-total-table">
+                <thead>
+                  <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Stricherl</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
     </div>
-  </div>
-  <script crossorigin="anonymous"
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-  <script crossorigin="anonymous" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script
+      crossorigin="anonymous"
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ></script>
+    <script crossorigin="anonymous" src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
-  <script type="text/javascript">
-    $(function () {
-      var ranking_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json";
-      var deleted_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json";
-      var deletedAuto_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted-auto.json";
-      var goldstar_path = "https://raw.githubusercontent.com/basislagerservices/data/main/ranking/goldstar.json";
+    <script type="text/javascript">
+      $(function () {
+        var ranking_path = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json'
+        var deleted_path = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json'
+        var deletedAuto_path =
+          'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted-auto.json'
+        var goldstar_path = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/goldstar.json'
 
-      let rankingPromise = $.getJSON(ranking_path);
-      let deletedPromise = $.getJSON(deleted_path);
-      let deletedAutoPromise = $.getJSON(deletedAuto_path);
-      let goldstarPromise = $.getJSON(goldstar_path);
+        let rankingPromise = $.getJSON(ranking_path)
+        let deletedPromise = $.getJSON(deleted_path)
+        let deletedAutoPromise = $.getJSON(deletedAuto_path)
+        let goldstarPromise = $.getJSON(goldstar_path)
 
-      $.when(rankingPromise, deletedPromise, deletedAutoPromise, goldstarPromise).then(function (ranking_data, deleted, deletedAuto, goldstar) {
-        ranking_data = ranking_data[0];
-        deleted = { ...deleted[0], ...deletedAuto[0] };
-        goldstar = goldstar[0];
+        $.when(rankingPromise, deletedPromise, deletedAutoPromise, goldstarPromise).then(function (
+          ranking_data,
+          deleted,
+          deletedAuto,
+          goldstar
+        ) {
+          ranking_data = ranking_data[0]
+          deleted = { ...deleted[0], ...deletedAuto[0] }
+          goldstar = goldstar[0]
 
-        $("#ranking-header").append(" (" + ranking_data["date"] + ")");
+          $('#ranking-header').append(' (' + ranking_data['date'] + ')')
 
-        // Create the i-th entry row the ranking.
-        // This function takes the index i, the ranked data and a function to extract
-        // the value to display from the entry.
-        // It returns the entire row between <tr> tags.
-        function create_row(i, data, value_func) {
-          var rankentry = "<td>" + (i + 1) + "</td>";
-          var entry = data[i];
+          // Create the i-th entry row the ranking.
+          // This function takes the index i, the ranked data and a function to extract
+          // the value to display from the entry.
+          // It returns the entire row between <tr> tags.
+          function create_row(i, data, value_func) {
+            var rankentry = '<td>' + (i + 1) + '</td>'
+            var entry = data[i]
 
-          var id = entry["id"];
-          var name = entry["name"];
+            var id = entry['id']
+            var name = entry['name']
 
-          // Check if the user was deleted.
-          var font_class = "";
-          if (name == "gelöschter User") {
-            font_class = 'class="table-danger"';
-            if (id in deleted)
-              name = deleted[id];
+            // Check if the user was deleted.
+            var font_class = ''
+            if (name == 'gelöschter User') {
+              font_class = 'class="table-danger"'
+              if (id in deleted) name = deleted[id]
+            }
+
+            // Add stars because everyone loves stars!
+            if (name in goldstar) var stars = goldstar[name]
+            else if (id in goldstar) var stars = goldstar[id]
+            else var stars = 0
+
+            if (stars !== 0) {
+              name += ' ⭐' + ' (x' + stars + ')'
+            }
+
+            var nameentry = '<td style="word-break: break-word">' + name + '</td>'
+            var valueentry = '<td>' + value_func(entry) + '</td>'
+
+            return '<tr ' + font_class + '>' + rankentry + nameentry + valueentry + '</tr>'
           }
 
-          // Add stars because everyone loves stars!
-          if (name in goldstar)
-            var stars = goldstar[name];
-          else if (id in goldstar)
-            var stars = goldstar[id];
-          else
-            var stars = 0;
+          // Create sorted rankings.
+          var postings = ranking_data['users'].toSorted(function (first, second) {
+            return second['postings'] - first['postings']
+          })
+          var green_total = ranking_data['users'].toSorted(function (first, second) {
+            return second['upvotes'] - first['upvotes']
+          })
+          var red_total = ranking_data['users'].toSorted(function (first, second) {
+            return second['downvotes'] - first['downvotes']
+          })
 
-          if (stars !== 0) {
-            name += " ⭐" + " (x" + stars + ")";
-          }
-
-          var nameentry = '<td style="word-break: break-word">' + name + "</td>";
-          var valueentry = "<td>" + value_func(entry) + "</td>";
-
-          return "<tr " + font_class + ">" + rankentry + nameentry + valueentry + "</tr>"
-        }
-
-        // Create sorted rankings.
-        var postings = ranking_data["users"].toSorted(function (first, second) {
-          return second["postings"] - first["postings"];
-        });
-        var green_total = ranking_data["users"].toSorted(function (first, second) {
-          return second["upvotes"] - first["upvotes"];
-        });
-        var red_total = ranking_data["users"].toSorted(function (first, second) {
-          return second["downvotes"] - first["downvotes"];
-        });
-
-        // Add rankings to tables.
-        $.each(postings, function (i) {
-          var row = create_row(i, postings, function (e) { return e["postings"]; })
-          $("#postings-table > tbody:last-child").append(row);
-        });
-        $.each(green_total, function (i) {
-          var row = create_row(i, green_total, function (e) { return e["upvotes"]; })
-          $("#green-total-table > tbody:last-child").append(row);
-        });
-        $.each(red_total, function (i) {
-          var row = create_row(i, red_total, function (e) { return e["downvotes"]; })
-          $("#red-total-table > tbody:last-child").append(row);
-        });
-      });
-    });
-  </script>
-</body>
-
+          // Add rankings to tables.
+          $.each(postings, function (i) {
+            var row = create_row(i, postings, function (e) {
+              return e['postings']
+            })
+            $('#postings-table > tbody:last-child').append(row)
+          })
+          $.each(green_total, function (i) {
+            var row = create_row(i, green_total, function (e) {
+              return e['upvotes']
+            })
+            $('#green-total-table > tbody:last-child').append(row)
+          })
+          $.each(red_total, function (i) {
+            var row = create_row(i, red_total, function (e) {
+              return e['downvotes']
+            })
+            $('#red-total-table > tbody:last-child').append(row)
+          })
+        })
+      })
+    </script>
+  </body>
 </html>

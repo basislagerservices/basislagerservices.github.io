@@ -15,8 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import * as utils from './utils.js';
-
+import * as utils from './utils.js'
 
 // Template for a full or partial posting.
 const postingHTML = `
@@ -46,12 +45,12 @@ const postingHTML = `
 
 /** Create a permalink for a ticker posting. */
 export function createTickerLink(tickerID, threadID, postingID) {
-  return 'https://derstandard.at/jetzt/livebericht/' + tickerID + '/' + threadID + '/' + postingID;
+  return 'https://derstandard.at/jetzt/livebericht/' + tickerID + '/' + threadID + '/' + postingID
 }
 
 /** Create a permalink for a forum posting. */
 export function createForumLink(articleID, postingID) {
-  return 'https://www.derstandard.at/story/' + articleID + '#posting-' + postingID;
+  return 'https://www.derstandard.at/story/' + articleID + '#posting-' + postingID
 }
 
 /**
@@ -67,28 +66,24 @@ export function createForumLink(articleID, postingID) {
  * - message: Message of the posting
  */
 export function renderPosting(container, posting, hide) {
-  container.innerHTML = postingHTML;
+  container.innerHTML = postingHTML
 
-  if ('href' in posting)
-    container.getElementsByClassName('posting-link')[0].href = posting["href"];
+  if ('href' in posting) container.getElementsByClassName('posting-link')[0].href = posting['href']
 
-  if ('username' in posting)
-    container.getElementsByClassName('posting-username')[0].innerHTML = posting['username'];
+  if ('username' in posting) container.getElementsByClassName('posting-username')[0].innerHTML = posting['username']
 
-  if ('status' in posting)
-    container.getElementsByClassName('posting-status')[0].innerHTML = posting['status'];
+  if ('status' in posting) container.getElementsByClassName('posting-status')[0].innerHTML = posting['status']
 
-  if ('published' in posting)
-    container.getElementsByClassName('posting-published')[0].innerHTML = posting['published'];
+  if ('published' in posting) container.getElementsByClassName('posting-published')[0].innerHTML = posting['published']
 
   if ('upvotes' in posting || 'downvotes' in posting) {
-    let rating = (posting['downvotes'] || 0) + ' 🟥 🟩 ' + (posting['upvotes'] || 0);
-    container.getElementsByClassName('posting-rating')[0].innerHTML = rating;
+    let rating = (posting['downvotes'] || 0) + ' 🟥 🟩 ' + (posting['upvotes'] || 0)
+    container.getElementsByClassName('posting-rating')[0].innerHTML = rating
   }
 
   if ('title' in posting)
-    container.getElementsByClassName('posting-title')[0].innerHTML = utils.escapeHTML(posting['title']);
+    container.getElementsByClassName('posting-title')[0].innerHTML = utils.escapeHTML(posting['title'])
 
   if ('message' in posting)
-    container.getElementsByClassName('posting-message')[0].innerHTML = utils.escapeHTML(posting['message']);
+    container.getElementsByClassName('posting-message')[0].innerHTML = utils.escapeHTML(posting['message'])
 }

@@ -15,21 +15,19 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-
 /**
  * Escape characters used in HTML and replace newlines with <br> tags.
  */
 export function escapeHTML(text) {
-  if (!text)
-    return text;
+  if (!text) return text
 
   // The order here is important to avoid re-escaping characters.
-  text = text.replaceAll("&", "&amp;");
-  text = text.replaceAll("<", "&lt;");
-  text = text.replaceAll(">", "&gt;");
-  text = text.replaceAll("\"", "&quot;");
-  text = text.replaceAll("\r\n", "<br>");
-  text = text.replaceAll("\n", "<br>");
+  text = text.replaceAll('&', '&amp;')
+  text = text.replaceAll('<', '&lt;')
+  text = text.replaceAll('>', '&gt;')
+  text = text.replaceAll('"', '&quot;')
+  text = text.replaceAll('\r\n', '<br>')
+  text = text.replaceAll('\n', '<br>')
 
-  return text;
-};
+  return text
+}
