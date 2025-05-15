@@ -12,6 +12,13 @@
       rel="stylesheet"
       crossorigin="anonymous"
     />
+    <script
+      crossorigin="anonymous"
+      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
+      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/gun/gun.js"></script>
+    <link href="css/style.css" rel="stylesheet" />
   </head>
 
   <body>
@@ -51,14 +58,52 @@
     </nav>
     <div class="container">
       <br />
-      <div class="container-fluid">
-        <img class="rounded img-fluid" src="assets/realistic-summer-cats-2.jpg" />
-      </div>
+      <img
+        id="clicker-image"
+        class="rounded img-fluid d-block mx-auto"
+        style="height: 600px; width: auto"
+        src="assets/clicker-cat-full.png"
+      />
+      <br />
+      <h2 id="clicker-counter" class="text-center">Loading...</h2>
     </div>
-    <script
-      crossorigin="anonymous"
-      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-    ></script>
+
+    <script>
+      const gun = Gun({
+        peers: [
+          'https://gun-manhattan.herokuapp.com/gun', // Official GUN public peer (often rate-limited)
+          'https://gunjs.herokuapp.com/gun', // Alternate public peer
+          'https://gun-decentralized.herokuapp.com/gun', // Another community-maintained one
+        ],
+      })
+      const clicks = gun.get('basislager-clicker')
+
+      const image = document.getElementById('clicker-image')
+      const counter = document.getElementById('clicker-counter')
+
+      let currentCount = 0
+
+      // Listen to changes
+      clicks.on((data) => {
+        if (typeof data.count === 'number') {
+          currentCount = data.count
+          counter.textContent = `${currentCount}`
+        }
+      })
+
+      // Click handler
+      image.addEventListener('click', () => {
+        // Animate locally
+        image.classList.remove('animate-pop')
+        void image.offsetWidth
+        image.classList.add('animate-pop')
+
+        // Increment the counter in GUN
+        clicks.once((data) => {
+          const updated = (data?.count || 0) + 1
+          clicks.put({ count: updated })
+        })
+      })
+    </script>
   </body>
 </html>

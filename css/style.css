@@ -1,3 +1,4 @@
+/* For postle and magnus postings. */
 .bg-posting {
     background-color: #aed4ae;
 }
@@ -14,3 +15,20 @@
     max-height: 12rem;
     overflow-y: auto;
 }
+
+
+/* For the clicker animation. */
+.animate-pop {
+    animation: pop 200ms ease;
+}
+
+@keyframes pop {
+    0%   { transform: scale(1); }
+    50%  { transform: scale(0.85); }
+    100% { transform: scale(1); }
+}
+    img {
+      width: 200px;
+      transition: transform 0.2s ease;
+      cursor: pointer;
+    }
