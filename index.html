@@ -72,8 +72,6 @@
       const gun = Gun({
         peers: [
           'https://gun-manhattan.herokuapp.com/gun', // Official GUN public peer (often rate-limited)
-          'https://gunjs.herokuapp.com/gun', // Alternate public peer
-          'https://gun-decentralized.herokuapp.com/gun', // Another community-maintained one
         ],
       })
       const clicks = gun.get('basislager-clicker')
