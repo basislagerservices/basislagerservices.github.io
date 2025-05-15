@@ -70,46 +70,48 @@
     </div>
 
     <script>
-      const gun = Gun({
-        peers: [
-          'https://gun-manhattan.herokuapp.com/gun', // Official GUN public peer (often rate-limited)
-        ],
-      })
-      const clicks = gun.get('basislager-clicker')
+      const STORAGE_KEY_UUID = 'clicker.uuid' // UUID to distinguish users.
+      const GUN_APP_NAME = 'basislager-clicker-v1'
 
+      let uuid = localStorage.getItem(STORAGE_KEY_UUID)
+      if (uuid == null) {
+        uuid = crypto.randomUUID()
+        localStorage.setItem(STORAGE_KEY_UUID, uuid)
+      }
+      console.log(`UUID: ${uuid}`)
+
+      // DOM Elements
       const image = document.getElementById('clicker-image')
       const counter = document.getElementById('clicker-counter')
 
-      let currentCount = 0
+      // Get the global node and the user node.
+      const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] })
+      const globalNode = gun.get(GUN_APP_NAME)
+      const userNode = globalNode.get(uuid)
 
-      // Listen to changes
-      clicks.on((data) => {
-        if (typeof data.count === 'number') {
-          currentCount = data.count
-          counter.textContent = `${currentCount}`
+      // Listen to changes and sum up all user counts.
+      const globalCounts = {}
+      globalNode.map().on((val, key) => {
+        globalCounts[key] = val || 0
 
-          if (data.count % 100 == 0) {
-            confetti({
-              particleCount: 100,
-              spread: 70,
-              origin: { y: 0.6 },
-            })
-          }
-        }
+        const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
+        counter.textContent = `${total}`
+
+        if (total % 100 == 0)
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+          })
       })
 
-      // Click handler
+      // Update our count.
       image.addEventListener('click', () => {
-        // Animate locally
         image.classList.remove('animate-pop')
         void image.offsetWidth
         image.classList.add('animate-pop')
 
-        // Increment the counter in GUN
-        clicks.once((data) => {
-          const updated = (data?.count || 0) + 1
-          clicks.put({ count: updated })
-        })
+        userNode.put((globalCounts[uuid] || 0) + 1)
       })
     </script>
   </body>
