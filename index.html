@@ -61,7 +61,7 @@
       <br />
       <img
         id="clicker-image"
-        class="rounded img-fluid d-block mx-auto"
+        class="rounded img-fluid d-block mx-auto disable-selection"
         style="height: 600px; width: auto"
         src="assets/clicker-cat-full.png"
       />
@@ -128,7 +128,7 @@
       })
 
       // Update our count.
-      image.addEventListener('click', () => {
+      image.addEventListener('click', (event) => {
         image.classList.remove('animate-pop')
         void image.offsetWidth
         image.classList.add('animate-pop')
