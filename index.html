@@ -63,7 +63,7 @@
         id="clicker-image"
         class="rounded img-fluid d-block mx-auto disable-selection"
         style="height: 600px; width: auto"
-        src="assets/clicker-image-1.png"
+        src="assets/clicker-image-2.png"
       />
       <br />
       <h2 id="clicker-counter" class="text-center"></h2>
@@ -77,8 +77,6 @@
       }, 3000)
 
       function updatePage(count) {
-        if (count >= 100000) image.src = 'assets/clicker-image-2.png'
-
         if (!effectsEnabled) return
 
         // Animation for the 100000 clicks event.
