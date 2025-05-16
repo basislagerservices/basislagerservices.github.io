@@ -66,10 +66,37 @@
         src="assets/clicker-cat-full.png"
       />
       <br />
-      <h2 id="clicker-counter" class="text-center">Loading...</h2>
+      <h2 id="clicker-counter" class="text-center"></h2>
     </div>
 
     <script>
+      // Enable effects only after an initial timeout, when the global count map is populated.
+      let effectsEnabled = false
+      setTimeout(() => {
+        effectsEnabled = true
+      }, 3000)
+
+      function createEffects(count) {
+        if (!effectsEnabled) return
+
+        if (count % 1000 == 0) {
+          confetti({
+            particleCount: 200,
+            spread: 70,
+            origin: { y: 0.6 },
+            shapes: ['heart'],
+            colors: ['FFC0CB', 'FF69B4', 'FF1493', 'C71585'],
+            scalar: 8,
+          })
+        } else if (count % 100 == 0) {
+          confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 },
+          })
+        }
+      }
+
       const STORAGE_KEY_UUID = 'clicker.uuid' // UUID to distinguish users.
       const GUN_APP_NAME = 'basislager-clicker-v1'
 
@@ -97,22 +124,7 @@
         const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
         counter.textContent = `${total}`
 
-        if (total % 1000 == 0) {
-          confetti({
-            particleCount: 200,
-            spread: 70,
-            origin: { y: 0.6 },
-            shapes: ['heart'],
-            colors: ['FFC0CB', 'FF69B4', 'FF1493', 'C71585'],
-            scalar: 8,
-          })
-        } else if (total % 100 == 0) {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-          })
-        }
+        createEffects(total)
       })
 
       // Update our count.
