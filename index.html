@@ -63,7 +63,7 @@
         id="clicker-image"
         class="rounded img-fluid d-block mx-auto disable-selection"
         style="height: 600px; width: auto"
-        src="assets/clicker-cat-full.png"
+        src="assets/clicker-image-1.png"
       />
       <br />
       <h2 id="clicker-counter" class="text-center"></h2>
@@ -76,8 +76,30 @@
         effectsEnabled = true
       }, 3000)
 
-      function createEffects(count) {
+      function updatePage(count) {
+        if (count >= 100000) image.src = 'assets/clicker-image-2.png'
+
         if (!effectsEnabled) return
+
+        // Animation for the 100000 clicks event.
+        if (count % 100000 == 0) {
+          function sideEffect() {
+            for (side in [0, 1])
+              confetti({
+                particleCount: 50,
+                spread: 70,
+                origin: { y: 0.6, x: side },
+                shapes: ['emoji'],
+                shapeOptions: {
+                  emoji: {
+                    value: ['🏴‍☠️', '⚓', '🦜', '☠️'],
+                  },
+                },
+                scalar: 2,
+              })
+          }
+          for (i = 0; i < 30; i++) setTimeout(sideEffect, i * 250)
+        }
 
         if (count % 1000 == 0) {
           confetti({
@@ -97,6 +119,7 @@
         }
       }
 
+      // General configuration
       const STORAGE_KEY_UUID = 'clicker.uuid' // UUID to distinguish users.
       const GUN_APP_NAME = 'basislager-clicker-v1'
 
@@ -124,7 +147,7 @@
         const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
         counter.textContent = `${total}`
 
-        createEffects(total)
+        updatePage(total)
       })
 
       // Update our count.
