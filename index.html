@@ -63,7 +63,6 @@
         id="clicker-image"
         class="rounded img-fluid d-block mx-auto disable-selection"
         style="height: 600px; width: auto"
-        src="assets/clicker-image-2.png"
       />
       <br />
       <h2 id="clicker-counter" class="text-center"></h2>
@@ -77,6 +76,13 @@
       }, 3000)
 
       function updatePage(count) {
+        // Select the image based on the clicker count.
+        imageIndex = Math.min(Math.floor(count / 100000), 1) + 1
+        imagePath = `assets/clicker-image-${imageIndex}.png`
+        if (image.src != imagePath) {
+          image.src = imagePath
+        }
+
         if (!effectsEnabled) return
 
         // Animation for the 100000 clicks event.
