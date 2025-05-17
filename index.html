@@ -79,7 +79,7 @@
         // Select the image based on the clicker count.
         imageIndex = Math.min(Math.floor(count / 100000), 1) + 1
         imagePath = `assets/clicker-image-${imageIndex}.png`
-        if (image.src != imagePath) {
+        if (image.src !== location.origin + '/' + imagePath) {
           image.src = imagePath
         }
 
