@@ -77,7 +77,7 @@
 
       function updatePage(count) {
         // Select the image based on the clicker count.
-        imageIndex = Math.min(Math.floor(count / 100000), 2) + 1
+        imageIndex = Math.min(Math.floor(count / 100000), 3) + 1
         imagePath = `assets/clicker-image-${imageIndex}.png`
         if (image.src !== location.origin + '/' + imagePath) {
           image.src = imagePath
