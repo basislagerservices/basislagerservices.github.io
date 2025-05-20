@@ -66,6 +66,7 @@
       />
       <br />
       <h2 id="clicker-counter" class="text-center"></h2>
+      <div id="clicker-online-users" class="text-center"></div>
     </div>
 
     <script>
@@ -78,6 +79,7 @@
       // DOM Elements
       const image = document.getElementById('clicker-image')
       const counter = document.getElementById('clicker-counter')
+      const onlineUsers = document.getElementById('clicker-online-users')
 
       function updatePage(count) {
         // Select the image based on the clicker count.
@@ -130,7 +132,7 @@
 
       // General configuration
       const STORAGE_KEY_UUID = 'clicker.uuid' // UUID to distinguish users.
-      const GUN_APP_NAME = 'basislager-clicker-v1'
+      const GUN_APP_NAME = 'basislager-clicker-v2'
 
       // Debug configuration.
       let params = new URLSearchParams(location.search)
@@ -151,23 +153,46 @@
       const globalNode = gun.get(appName)
       const userNode = globalNode.get(uuid)
 
-      // Listen to changes and sum up all user counts.
+      // Listen to changes and update local statistics.
       const globalCounts = {}
+      const globalLastClick = {}
+      const globalLastOnline = {}
       globalNode.map().on((val, key) => {
-        globalCounts[key] = val || 0
+        globalCounts[key] = val.count || 0
+        globalLastClick[key] = val.lastClick || 0
+        globalLastOnline[key] = val.lastOnline || 0
 
         const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
         updatePage(total)
+
+        const timestamp = new Date().getTime()
+        const online = Object.values(globalLastOnline).filter(
+          (a) => timestamp - 60000 < a && a < timestamp + 60000
+        ).length
+
+        onlineUsers.textContent = `${online} User`
       })
 
-      // Update our count.
+      // Record the new click count and the last click timestamp.
       image.addEventListener('click', (event) => {
         image.classList.remove('animate-pop')
         void image.offsetWidth
         image.classList.add('animate-pop')
 
-        userNode.put((globalCounts[uuid] || 0) + 1)
+        let updateCount = (globalCounts[uuid] || 0) + 1
+        let updateTimestamp = new Date().getTime()
+        userNode.put({
+          count: updateCount,
+          lastClick: updateTimestamp,
+          lastOnline: updateTimestamp,
+        })
       })
+
+      // Continuously update the timestamp while online and set the number of online users.
+      setInterval(() => {
+        let onlineTimestamp = new Date().getTime()
+        userNode.put({ lastOnline: onlineTimestamp })
+      }, 10000)
 
       updatePage(Object.values(globalCounts).reduce((a, b) => a + b, 0))
     </script>
