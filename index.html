@@ -158,12 +158,16 @@
       const globalLastClick = {}
       const globalLastOnline = {}
       globalNode.map().on((val, key) => {
-        globalCounts[key] = val.count || 0
+        // Trigger effects only when the count has changed.
+        // This avoids triggering them during timestamp updates.
+        if (globalCounts[key] !== val.count) {
+          globalCounts[key] = val.count || 0
+          const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
+          updatePage(total)
+        }
+
         globalLastClick[key] = val.lastClick || 0
         globalLastOnline[key] = val.lastOnline || 0
-
-        const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
-        updatePage(total)
 
         const timestamp = new Date().getTime()
         const online = Object.values(globalLastOnline).filter(
