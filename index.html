@@ -75,6 +75,10 @@
         effectsEnabled = true
       }, 3000)
 
+      // DOM Elements
+      const image = document.getElementById('clicker-image')
+      const counter = document.getElementById('clicker-counter')
+
       function updatePage(count) {
         // Select the image based on the clicker count.
         imageIndex = Math.min(Math.floor(count / 100000), 4) + 1
@@ -82,6 +86,7 @@
         if (image.src !== location.origin + '/' + imagePath) {
           image.src = imagePath
         }
+        counter.textContent = `${count}`
 
         if (!effectsEnabled) return
 
@@ -127,6 +132,13 @@
       const STORAGE_KEY_UUID = 'clicker.uuid' // UUID to distinguish users.
       const GUN_APP_NAME = 'basislager-clicker-v1'
 
+      // Debug configuration.
+      let params = new URLSearchParams(location.search)
+      let peers = ['https://gun-manhattan.herokuapp.com/gun']
+      if (params.get('debug-peer')) peers = [params.get('debug-peer')]
+      let appName = GUN_APP_NAME
+      if (params.get('debug-app-name')) appName = params.get('debug-app-name')
+
       let uuid = localStorage.getItem(STORAGE_KEY_UUID)
       if (uuid == null) {
         uuid = crypto.randomUUID()
@@ -134,13 +146,9 @@
       }
       console.log(`UUID: ${uuid}`)
 
-      // DOM Elements
-      const image = document.getElementById('clicker-image')
-      const counter = document.getElementById('clicker-counter')
-
       // Get the global node and the user node.
-      const gun = Gun({ peers: ['https://gun-manhattan.herokuapp.com/gun'] })
-      const globalNode = gun.get(GUN_APP_NAME)
+      const gun = Gun({ peers: peers })
+      const globalNode = gun.get(appName)
       const userNode = globalNode.get(uuid)
 
       // Listen to changes and sum up all user counts.
@@ -149,8 +157,6 @@
         globalCounts[key] = val || 0
 
         const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
-        counter.textContent = `${total}`
-
         updatePage(total)
       })
 
@@ -162,6 +168,8 @@
 
         userNode.put((globalCounts[uuid] || 0) + 1)
       })
+
+      updatePage(Object.values(globalCounts).reduce((a, b) => a + b, 0))
     </script>
   </body>
 </html>
