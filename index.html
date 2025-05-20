@@ -171,7 +171,7 @@
 
         const timestamp = new Date().getTime()
         const online = Object.values(globalLastOnline).filter(
-          (a) => timestamp - 60000 < a && a < timestamp + 60000
+          (a) => timestamp - 300000 < a && a < timestamp + 60000
         ).length
 
         onlineUsers.textContent = `${online} User online`
