@@ -112,16 +112,33 @@
           for (i = 0; i < 30; i++) setTimeout(sideEffect, i * 250)
         }
 
-        if (count % 1000 == 0) {
+        if (count % 10000 == 0) {
           confetti({
             particleCount: 200,
+            spread: 70,
+            origin: { y: 0.6 },
+            shapes: ['emoji'],
+            shapeOptions: {
+              emoji: {
+                value: ['🍆', '🍒'],
+              },
+            },
+            scalar: 8,
+          })
+        }
+
+        if (count % 1000 == 0) {
+          confetti({
+            particleCount: 100,
             spread: 70,
             origin: { y: 0.6 },
             shapes: ['heart'],
             colors: ['FFC0CB', 'FF69B4', 'FF1493', 'C71585'],
             scalar: 8,
           })
-        } else if (count % 100 == 0) {
+        }
+
+        if (count % 100 == 0) {
           confetti({
             particleCount: 100,
             spread: 70,
