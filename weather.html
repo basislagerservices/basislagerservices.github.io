@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Temperature Map with Clustering</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <style>
+      #map {
+        height: 600px;
+        width: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Temperature Map with Clustered Averages</h2>
+    <div id="map"></div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <script>
+      const map = L.map('map').setView([51.505, -0.09], 6)
+
+      // Add OSM tile layer
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+      }).addTo(map)
+
+      // Create marker cluster group with custom cluster icon
+      const markers = L.markerClusterGroup({
+        iconCreateFunction: function (cluster) {
+          const temps = cluster.getAllChildMarkers().map((m) => m.options.temp)
+          const avg = (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1)
+          return L.divIcon({
+            html: `<div style="background: #ff7800; color: white; border-radius: 50%; padding: 10px;">${avg}°C</div>`,
+            className: 'custom-cluster',
+            iconSize: L.point(40, 40),
+          })
+        },
+      })
+
+      // Get temperature information and add it to the map.
+      let stationData = {}
+
+      fetch('https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min/metadata')
+        .then((response) => {
+          if (!response.ok) throw new Error('connection error')
+          return response.json()
+        })
+        .then((data) => {
+          for (const station of data.stations) {
+            stationData[station.id] = {
+              name: station.name,
+              altitude: station.altitude,
+              lat: station.lat,
+              lon: station.lon,
+            }
+          }
+          const idsParam = encodeURIComponent(Object.keys(stationData).join(','))
+          const url = `https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min?parameters=TLAM&station_ids=${idsParam}&output_format=geojson`
+          return fetch(url)
+        })
+        .then((response) => {
+          if (!response.ok) throw new Error('connection error')
+          return response.json()
+        })
+        .then((data) => {
+          for (const station of data.features) {
+            const stationId = station.properties.station
+            // This seems to be an array with multiple, possibly null values. Just take one for now.
+            // If there is no value, then we just delete the station.
+            const tempData = station.properties.parameters.TLAM.data
+            const tempValue = tempData.filter((v) => v !== null)[0]
+            if (typeof tempValue !== 'undefined') {
+              stationData[stationId]['temperature'] = tempValue
+            } else {
+              delete stationData[stationId]
+            }
+          }
+        })
+        .then(() => {
+          for (const station of Object.values(stationData)) {
+            const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
+              `<strong>${station.temperature}°C</strong>`
+            )
+            markers.addLayer(marker)
+          }
+          map.addLayer(markers)
+        })
+    </script>
+  </body>
+</html>
