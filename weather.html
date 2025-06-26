@@ -114,7 +114,6 @@
 
       // Get temperature information and add it to the map.
       let stationData = {}
-
       fetch('https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min/metadata')
         .then((response) => {
           if (!response.ok) throw new Error('connection error')
@@ -122,6 +121,10 @@
         })
         .then((data) => {
           for (const station of data.stations) {
+            // Some stations might be inactive.
+            // TODO: Filter out stations with outdated values (e.g. more than 1 hour old).
+            if (!station.is_active) continue
+
             stationData[station.id] = {
               name: station.name,
               altitude: station.altitude,
@@ -130,7 +133,8 @@
             }
           }
           const idsParam = encodeURIComponent(Object.keys(stationData).join(','))
-          const url = `https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min?parameters=TLAM&station_ids=${idsParam}&output_format=geojson`
+          const url = `https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min?parameters=TLAM,FFAM,FFX&station_ids=${idsParam}&output_format=geojson`
+          console.log(url)
           return fetch(url)
         })
         .then((response) => {
