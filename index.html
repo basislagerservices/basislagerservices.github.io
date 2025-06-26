@@ -70,7 +70,7 @@
       <div id="clicker-online-users" class="text-center"></div>
     </div>
 
-    <!--script>
+    <script>
       // Enable effects only after an initial timeout, when the global count map is populated.
       let effectsEnabled = false
       setTimeout(() => {
@@ -150,7 +150,7 @@
 
       // General configuration
       const STORAGE_KEY_UUID = 'clicker.uuid' // UUID to distinguish users.
-      const GUN_APP_NAME = 'basislager-clicker-v2'
+      const GUN_APP_NAME = 'basislager-clicker-v6'
 
       // Debug configuration.
       let params = new URLSearchParams(location.search)
@@ -217,7 +217,7 @@
       }, 10000)
 
       updatePage(Object.values(globalCounts).reduce((a, b) => a + b, 0))
-    </script-->
+    </script>
 
   </body>
 </html>
