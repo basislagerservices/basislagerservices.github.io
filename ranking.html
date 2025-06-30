@@ -189,7 +189,7 @@
           })
 
           // Remove users who don't want to show up in the ranking.
-          const hiddenUsers = ['danielf']
+          const hiddenUsers = []
           postings = postings.filter((e) => !hiddenUsers.includes(e.name))
           green_total = green_total.filter((e) => !hiddenUsers.includes(e.name))
           red_total = red_total.filter((e) => !hiddenUsers.includes(e.name))
