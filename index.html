@@ -57,167 +57,19 @@
         </div>
       </div>
     </nav>
-    <div class="container">
-      <br />
-      <img
-        id="clicker-image"
-        class="rounded img-fluid d-block mx-auto disable-selection"
-        style="height: 600px; width: auto"
-        src="assets/ooo.png"
-      />
-      <br />
-      <h2 id="clicker-counter" class="text-center"></h2>
-      <div id="clicker-online-users" class="text-center"></div>
+
+    <div
+      style="
+        width: 800px;
+        height: 600px;
+        margin: 50px auto;
+        border: 3px solid #333;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.3);
+      "
+    >
+      <iframe src="vibes/fishgame.html" style="width: 100%; height: 100%; border: none"></iframe>
     </div>
-
-    <!--script>
-      // Enable effects only after an initial timeout, when the global count map is populated.
-      let effectsEnabled = false
-      setTimeout(() => {
-        effectsEnabled = true
-      }, 3000)
-
-      // DOM Elements
-      const image = document.getElementById('clicker-image')
-      const counter = document.getElementById('clicker-counter')
-      const onlineUsers = document.getElementById('clicker-online-users')
-
-      function updatePage(count) {
-        // Select the image based on the clicker count.
-        imageIndex = Math.min(Math.floor(count / 100000), 7) + 1
-        imagePath = `assets/clicker-image-${imageIndex}.png`
-        if (image.src !== location.origin + '/' + imagePath) {
-          image.src = imagePath
-        }
-        counter.textContent = `${count}`
-
-        if (!effectsEnabled) return
-
-        // Animation for the 100000 clicks event.
-        if (count % 100000 == 0) {
-          function sideEffect() {
-            for (side in [0, 1])
-              confetti({
-                particleCount: 50,
-                spread: 70,
-                origin: { y: 0.6, x: side },
-                shapes: ['emoji'],
-                shapeOptions: {
-                  emoji: {
-                    value: ['🏴‍☠️', '⚓', '🦜', '☠️'],
-                  },
-                },
-                scalar: 2,
-              })
-          }
-          for (i = 0; i < 30; i++) setTimeout(sideEffect, i * 250)
-        }
-
-        if (count % 10000 == 0) {
-          confetti({
-            particleCount: 200,
-            spread: 70,
-            origin: { y: 0.6 },
-            shapes: ['emoji'],
-            shapeOptions: {
-              emoji: {
-                value: ['🍆', '🍒'],
-              },
-            },
-            scalar: 8,
-          })
-        }
-
-        if (count % 1000 == 0) {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            shapes: ['heart'],
-            colors: ['FFC0CB', 'FF69B4', 'FF1493', 'C71585'],
-            scalar: 8,
-          })
-        }
-
-        if (count % 100 == 0) {
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-          })
-        }
-      }
-
-      // General configuration
-      const STORAGE_KEY_UUID = 'clicker.uuid' // UUID to distinguish users.
-      const GUN_APP_NAME = 'basislager-clicker-v6'
-
-      // Debug configuration.
-      let params = new URLSearchParams(location.search)
-      let peers = ['https://gun-manhattan.herokuapp.com/gun']
-      if (params.get('debug-peer')) peers = [params.get('debug-peer')]
-      let appName = GUN_APP_NAME
-      if (params.get('debug-app-name')) appName = params.get('debug-app-name')
-
-      let uuid = localStorage.getItem(STORAGE_KEY_UUID)
-      if (uuid == null) {
-        uuid = crypto.randomUUID()
-        localStorage.setItem(STORAGE_KEY_UUID, uuid)
-      }
-      console.log(`UUID: ${uuid}`)
-
-      // Get the global node and the user node.
-      const gun = Gun({ peers: peers })
-      const globalNode = gun.get(appName)
-      const userNode = globalNode.get(uuid)
-
-      // Listen to changes and update local statistics.
-      const globalCounts = {}
-      const globalLastClick = {}
-      const globalLastOnline = {}
-      globalNode.map().on((val, key) => {
-        // Trigger effects only when the count has changed.
-        // This avoids triggering them during timestamp updates.
-        if (globalCounts[key] !== val.count) {
-          globalCounts[key] = val.count || 0
-          const total = Object.values(globalCounts).reduce((a, b) => a + b, 0)
-          updatePage(total)
-        }
-
-        globalLastClick[key] = val.lastClick || 0
-        globalLastOnline[key] = val.lastOnline || 0
-
-        const timestamp = new Date().getTime()
-        const online = Object.values(globalLastOnline).filter(
-          (a) => timestamp - 300000 < a && a < timestamp + 60000
-        ).length
-
-        onlineUsers.textContent = `${online} User online`
-      })
-
-      // Record the new click count and the last click timestamp.
-      image.addEventListener('click', (event) => {
-        image.classList.remove('animate-pop')
-        void image.offsetWidth
-        image.classList.add('animate-pop')
-
-        let updateCount = (globalCounts[uuid] || 0) + 1
-        let updateTimestamp = new Date().getTime()
-        userNode.put({
-          count: updateCount,
-          lastClick: updateTimestamp,
-          lastOnline: updateTimestamp,
-        })
-      })
-
-      // Continuously update the timestamp while online and set the number of online users.
-      setInterval(() => {
-        let onlineTimestamp = new Date().getTime()
-        userNode.put({ lastOnline: onlineTimestamp })
-      }, 10000)
-
-      updatePage(Object.values(globalCounts).reduce((a, b) => a + b, 0))
-    </script-->
-
   </body>
 </html>
