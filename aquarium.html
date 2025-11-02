@@ -131,7 +131,8 @@
             // Bounce off walls
             if (fish.x < 30) fish.direction = 1
             if (fish.x > canvas.width - 30) fish.direction = -1
-            if (fish.y < 30 || fish.y > canvas.height - 30) fish.offset += Math.PI // change vertical phase
+
+            fish.y = Math.min(Math.max(30, fish.y), canvas.height - 30)
           }
 
           drawFish(fish)
@@ -181,7 +182,6 @@
         const ws = new WebSocket(connectUrl)
         ws.onmessage = (event) => {
           data = JSON.parse(event.data)
-          //console.log(data)
           for (ea of data.M || []) {
             if (ea.M != 'addPostings') continue
 
@@ -193,10 +193,12 @@
             }
           }
         }
-
-        startUrl = new URL(corsAnywhere + hubUrl + '/start')
-        startUrl = startUrl + '?' + new URLSearchParams(payload)
-        await fetch(startUrl)
+        ws.onerror = (event) => console.error('ERROR:', event)
+        ws.onopen = async (event) => {
+          startUrl = new URL(corsAnywhere + hubUrl + '/start')
+          startUrl = startUrl + '?' + new URLSearchParams(payload)
+          await fetch(startUrl)
+        }
       }
 
       connectWebsocket().then()
