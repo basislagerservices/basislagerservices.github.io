@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Community Aquarium</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        background: radial-gradient(circle at 50% 30%, #002244, #000820);
+        height: 100%;
+        width: 100%;
+        font-family: sans-serif;
+      }
+      canvas {
+        display: block;
+      }
+      #info {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: #aaf;
+        background: rgba(0, 0, 30, 0.4);
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="aquarium"></canvas>
+
+    <script>
+      const canvas = document.getElementById('aquarium')
+      const ctx = canvas.getContext('2d')
+
+      let users = {}
+      const inactivityLimit = 3600 * 1000
+
+      let lastWidth = window.innerWidth
+      let lastHeight = window.innerHeight
+
+      function resize() {
+        const newWidth = window.innerWidth
+        const newHeight = window.innerHeight
+
+        // Scale fish positions to new size
+        const scaleX = newWidth / lastWidth
+        const scaleY = newHeight / lastHeight
+
+        for (const fish of Object.values(users)) {
+          fish.x *= scaleX
+          fish.y *= scaleY
+        }
+
+        canvas.width = newWidth
+        canvas.height = newHeight
+        lastWidth = newWidth
+        lastHeight = newHeight
+      }
+
+      window.addEventListener('resize', resize)
+      resize()
+
+      function randomColor() {
+        return `hsl(${Math.random() * 360}, 70%, 60%)`
+      }
+
+      function drawFish(fish) {
+        ctx.save()
+        ctx.translate(fish.x, fish.y)
+        ctx.scale(fish.direction, 1)
+
+        // Draw body
+        ctx.fillStyle = fish.color
+        ctx.beginPath()
+        ctx.ellipse(0, 0, 20, 10, 0, 0, Math.PI * 2)
+        ctx.fill()
+
+        // Tail
+        ctx.beginPath()
+        ctx.moveTo(-20, 0)
+        ctx.lineTo(-30, -10)
+        ctx.lineTo(-30, 10)
+        ctx.closePath()
+        ctx.fill()
+
+        // Optional glow for recent activity
+        const glowStrength = Math.max(0, 1 - (Date.now() - fish.lastActive) / 5000)
+        if (glowStrength > 0) {
+          ctx.shadowColor = fish.color
+          ctx.shadowBlur = 15 * glowStrength
+          ctx.beginPath()
+          ctx.arc(0, 0, 10 + 10 * glowStrength, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.shadowBlur = 0
+        }
+
+        ctx.restore()
+
+        // --- Draw username label ---
+        ctx.font = '14px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
+        ctx.fillText(fish.name, fish.x, fish.y - 18) // draw above the fish
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        const now = Date.now()
+
+        for (const [name, fish] of Object.entries(users)) {
+          const inactive = now - fish.lastActive > inactivityLimit
+
+          if (inactive) {
+            // Swim off-screen slowly
+            fish.x += fish.direction * 1.5
+            if (fish.x < -60 || fish.x > canvas.width + 60) {
+              delete users[name]
+              continue
+            }
+          } else {
+            // Swim pattern
+            fish.x += fish.direction * 0.7
+            fish.y += Math.sin(Date.now() / 700 + fish.offset) * 0.5
+
+            // Bounce off walls
+            if (fish.x < 30) fish.direction = 1
+            if (fish.x > canvas.width - 30) fish.direction = -1
+            if (fish.y < 30 || fish.y > canvas.height - 30) fish.offset += Math.PI // change vertical phase
+          }
+
+          drawFish(fish)
+        }
+
+        requestAnimationFrame(animate)
+      }
+
+      function handlePost(user) {
+        if (!users[user]) {
+          users[user] = {
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            direction: Math.random() < 0.5 ? 1 : -1,
+            color: randomColor(),
+            offset: Math.random() * Math.PI * 2,
+            lastActive: Date.now(),
+            name: user,
+          }
+        } else {
+          users[user].lastActive = Date.now()
+        }
+      }
+
+      TICKER_ID = 3000000285971
+      const corsAnywhere = 'https://cors-anywhere.com/'
+      const hubUrl = 'https://live.derstandard.at/jetzt/signalr/hub'
+
+      async function connectWebsocket() {
+        connectionData = await fetch(corsAnywhere + hubUrl + '/negotiate')
+        connectionJson = await connectionData.json()
+
+        payload = {
+          transport: 'webSockets',
+          clientProtocol: '1.5',
+          lbid: TICKER_ID,
+          v: '1.0.8907.26570',
+          connectionToken: connectionJson.ConnectionToken,
+          connectionData: '[{"name": "reporthub"}]',
+          tid: '10',
+        }
+
+        connectUrl = new URL(hubUrl + '/connect')
+        connectUrl.protocol = 'wss:'
+        connectUrl = connectUrl + '?' + new URLSearchParams(payload)
+
+        const ws = new WebSocket(connectUrl)
+        ws.onmessage = (event) => {
+          data = JSON.parse(event.data)
+          //console.log(data)
+          for (ea of data.M || []) {
+            if (ea.M != 'addPostings') continue
+
+            for (eb of ea.A || []) {
+              for (ec of eb) {
+                console.log(ec.cn)
+                handlePost(ec.cn)
+              }
+            }
+          }
+        }
+
+        startUrl = new URL(corsAnywhere + hubUrl + '/start')
+        startUrl = startUrl + '?' + new URLSearchParams(payload)
+        await fetch(startUrl)
+      }
+
+      connectWebsocket().then()
+      animate()
+    </script>
+  </body>
+</html>
