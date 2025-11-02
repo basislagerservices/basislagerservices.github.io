@@ -125,7 +125,7 @@
             }
           } else {
             // Swim pattern
-            fish.x += fish.direction * 0.7
+            fish.x += fish.direction * fish.speed
             fish.y += Math.sin(Date.now() / 700 + fish.offset) * 0.5
 
             // Bounce off walls
@@ -149,6 +149,7 @@
             direction: Math.random() < 0.5 ? 1 : -1,
             color: randomColor(),
             offset: Math.random() * Math.PI * 2,
+            speed: 0.5 + Math.random() * 0.5,
             lastActive: Date.now(),
             name: user,
           }
