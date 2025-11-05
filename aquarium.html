@@ -218,7 +218,7 @@
           for (let ea of data.M || []) {
             if (ea.M == 'addPostings' || ea.M == 'updateVotes') {
               userActivities.push(Date.now())
-              if (userActivities.length > MAX_TIMESTAMPS) activites.shift()
+              if (userActivities.length > MAX_TIMESTAMPS) userActivites.shift()
             }
 
             if (ea.M != 'addPostings') continue
