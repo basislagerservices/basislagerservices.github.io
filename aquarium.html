@@ -189,7 +189,7 @@
       const MAX_TIMESTAMPS = 20
       const MIN_TIMEOUT = 300 * 1000
       const TIMEOUT_FACTOR = 5
-      const userActivities = []
+      const userActions = []
 
       const corsAnywhere = 'https://cors-anywhere.com/'
       const hubUrl = 'https://live.derstandard.at/jetzt/signalr/hub'
@@ -217,8 +217,8 @@
           data = JSON.parse(event.data)
           for (let ea of data.M || []) {
             if (ea.M == 'addPostings' || ea.M == 'updateVotes') {
-              userActivities.push(Date.now())
-              if (userActivities.length > MAX_TIMESTAMPS) userActivites.shift()
+              userActions.push(Date.now())
+              if (userActions.length > MAX_TIMESTAMPS) userActions.shift()
             }
 
             if (ea.M != 'addPostings') continue
@@ -252,15 +252,15 @@
       // Check for timeouts every few seconds.
       setInterval(async () => {
         let lastActivity = Infinity
-        if (userActivities.length) {
-          lastActivity = userActivities[userActivities.length - 1]
+        if (userActions.length) {
+          lastActivity = userActions[userActions.length - 1]
         }
 
         let averageInterval = 0
-        for (let i = 0; i < userActivities.length - 1; i++) {
-          averageInterval += userActivities[i + 1] - userActivities[i]
+        for (let i = 0; i < userActions.length - 1; i++) {
+          averageInterval += userActions[i + 1] - userActions[i]
         }
-        averageInterval /= userActivities.length - 1
+        averageInterval /= userActions.length - 1
 
         let timeout = MIN_TIMEOUT
         if (isFinite(averageInterval)) {
