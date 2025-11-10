@@ -34,7 +34,7 @@
     <canvas id="aquarium"></canvas>
     <div id="info">💬 Tickerquarium: Wer postet, schwimmt!</div>
 
-    <script>
+    <script type="module">
       const canvas = document.getElementById('aquarium')
       const ctx = canvas.getContext('2d')
 
@@ -195,10 +195,10 @@
       const hubUrl = 'https://live.derstandard.at/jetzt/signalr/hub'
 
       async function connectWebsocket() {
-        connectionData = await retryFetch(corsAnywhere + hubUrl + '/negotiate')
-        connectionJson = await connectionData.json()
+        let connectionData = await retryFetch(corsAnywhere + hubUrl + '/negotiate')
+        let connectionJson = await connectionData.json()
 
-        payload = {
+        let payload = {
           transport: 'webSockets',
           clientProtocol: '1.5',
           lbid: TICKER_ID,
@@ -208,14 +208,14 @@
           tid: '10',
         }
 
-        connectUrl = new URL(hubUrl + '/connect')
+        let connectUrl = new URL(hubUrl + '/connect')
         connectUrl.protocol = 'wss:'
         connectUrl = connectUrl + '?' + new URLSearchParams(payload)
 
         const ws = new WebSocket(connectUrl)
         ws.onmessage = (event) => {
-          data = JSON.parse(event.data)
-          for (let ea of data.M || []) {
+          let data = JSON.parse(event.data)
+          for (const ea of data.M || []) {
             if (ea.M == 'addPostings' || ea.M == 'updateVotes') {
               userActions.push(Date.now())
               if (userActions.length > MAX_TIMESTAMPS) userActions.shift()
@@ -223,8 +223,8 @@
 
             if (ea.M != 'addPostings') continue
 
-            for (let eb of ea.A || []) {
-              for (ec of eb) {
+            for (const eb of ea.A || []) {
+              for (const ec of eb) {
                 console.info('User activity:', ec.cn)
                 handlePost(ec.cn)
               }
@@ -232,7 +232,7 @@
           }
         }
         ws.onopen = async (event) => {
-          startUrl = new URL(corsAnywhere + hubUrl + '/start')
+          let startUrl = new URL(corsAnywhere + hubUrl + '/start')
           startUrl = startUrl + '?' + new URLSearchParams(payload)
           await retryFetch(startUrl)
         }
@@ -243,11 +243,8 @@
         return ws
       }
 
-      // Establish the initial connectino to the ticker.
-      let webSocket = null
-      connectWebsocket().then((ws) => {
-        webSocket = ws
-      })
+      // Establish the initial connection to the ticker.
+      let webSocket = await connectWebsocket()
 
       // Check for timeouts every few seconds.
       setInterval(async () => {
