@@ -133,7 +133,11 @@
           }
 
           // At 60 fps, it takes 10 minutes for the entire spectrum.
-          fish.color = (fish.color + 0.01) % 360
+          if (fish.name == 'WS+') {
+            fish.color = (fish.color + 1.0) % 360
+          } else {
+            fish.color = (fish.color + 0.01) % 360
+          }
 
           drawFish(fish)
         }
