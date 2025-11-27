@@ -99,6 +99,12 @@
 
         ctx.restore()
 
+        // Add the face.
+        ctx.font = '28px sans-serif'
+        ctx.textAlign = 'center'
+        ctx.fillStyle = 'rgba(255, 255, 255, 1.00)'
+        ctx.fillText(fish.face, fish.x + fish.direction * 25, fish.y + 8)
+
         // --- Draw username label ---
         ctx.font = '14px sans-serif'
         ctx.textAlign = 'center'
@@ -145,6 +151,10 @@
         requestAnimationFrame(animate)
       }
 
+      function randomElement(array) {
+        return array[Math.floor(Math.random() * array.length)]
+      }
+
       function handlePost(user) {
         if (!users[user]) {
           users[user] = {
@@ -156,6 +166,7 @@
             speed: 0.5 + Math.random() * 0.5,
             lastActive: Date.now(),
             name: user,
+            face: randomElement(FACES),
           }
         } else {
           users[user].lastActive = Date.now()
@@ -186,6 +197,7 @@
       }
 
       const TICKER_ID = 3000000285971
+      const FACES = ['🐱', '😺', '😸', '😹', '😻', '😼', '😽']
 
       // Keep timestamps for user activity. We use this to detect connection timeouts.
       // The connection is reset if no activity is detected for
