@@ -168,7 +168,7 @@
       }
 
       // Retry fetch with exponential backoff: scale * base**n * (1 + jitter * RANDOM)
-      async function retryFetch(url, maxRetries = 10, base = 2, scale = 1000, jitter = 0.2) {
+      async function retryFetch(url, { maxRetries = 10, base = 2, scale = 1000, jitter = 0.2 }) {
         for (let i = 0; i < maxRetries; i++) {
           try {
             const result = await fetch(url)
@@ -199,7 +199,7 @@
       const hubUrl = 'https://live.derstandard.at/jetzt/signalr/hub'
 
       async function connectWebsocket() {
-        let connectionData = await retryFetch(corsAnywhere + hubUrl + '/negotiate')
+        let connectionData = await retryFetch(corsAnywhere + hubUrl + '/negotiate', { scale: 5000 })
         let connectionJson = await connectionData.json()
 
         let payload = {
@@ -238,7 +238,7 @@
         ws.onopen = async (event) => {
           let startUrl = new URL(corsAnywhere + hubUrl + '/start')
           startUrl = startUrl + '?' + new URLSearchParams(payload)
-          await retryFetch(startUrl)
+          await retryFetch(startUrl, { scale: 5000 })
         }
         ws.onclose = async () => {
           console.warn('Connection closed. Reconnecting in 10s...')
