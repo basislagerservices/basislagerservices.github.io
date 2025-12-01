@@ -197,7 +197,31 @@
       }
 
       const TICKER_ID = 3000000285971
-      const FACES = ['🐱', '😺', '😸', '😹', '😻', '😼', '😽', '🦁', '🐯']
+      const FACES = [
+        '🐱',
+        '😺',
+        '😸',
+        '😹',
+        '😻',
+        '😼',
+        '😽',
+        '🦁',
+        '🐯',
+        '🐵',
+        '🐶',
+        '🐺',
+        '🦊',
+        '🫎',
+        '🐮',
+        '🐷',
+        '🐹',
+        '🐰',
+        '🐻',
+        '🐻‍❄️',
+        '🐨',
+        '🐼',
+        '🐸',
+      ]
 
       // Keep timestamps for user activity. We use this to detect connection timeouts.
       // The connection is reset if no activity is detected for
@@ -291,6 +315,12 @@
           webSocket = null
         }
       }, 10 * 1000)
+
+      //for (let i = 0; i < FACES.length; i++) {
+      //  let name = `USER-${i}`
+      //  handlePost(name)
+      //  users[name].face = FACES[i]
+      //}
 
       animate()
     </script>
