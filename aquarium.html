@@ -233,11 +233,12 @@
       const TIMEOUT_FACTOR = 5
       const userActions = []
 
-      const corsAnywhere = 'https://cors-anywhere.com/'
+      //const corsProxy = 'https://cors-anywhere.com/'
+      const corsProxy = 'https://cors-anywhere-render-q53v.onrender.com/'
       const hubUrl = 'https://live.derstandard.at/jetzt/signalr/hub'
 
       async function connectWebsocket() {
-        let connectionData = await retryFetch(corsAnywhere + hubUrl + '/negotiate', { scale: 5000 })
+        let connectionData = await retryFetch(corsProxy + hubUrl + '/negotiate', { scale: 5000 })
         let connectionJson = await connectionData.json()
 
         let payload = {
@@ -274,7 +275,7 @@
           }
         }
         ws.onopen = async (event) => {
-          let startUrl = new URL(corsAnywhere + hubUrl + '/start')
+          let startUrl = new URL(corsProxy + hubUrl + '/start')
           startUrl = startUrl + '?' + new URLSearchParams(payload)
           await retryFetch(startUrl, { scale: 5000 })
         }
