@@ -156,7 +156,10 @@
         return array[Math.floor(Math.random() * array.length)]
       }
 
-      function handlePost(user) {
+      function handlePost(user, lastActive = null) {
+        if (lastActive === null) lastActive = Date.now()
+        else if (lastActive < Date.now() - inactivityLimit) return
+
         if (!users[user]) {
           users[user] = {
             x: Math.random() * canvas.width,
@@ -165,12 +168,12 @@
             color: Math.random() * 360,
             offset: Math.random() * Math.PI * 2,
             speed: 0.5 + Math.random() * 0.5,
-            lastActive: Date.now(),
+            lastActive: lastActive,
             name: user,
             face: randomElement(FACES),
           }
         } else {
-          users[user].lastActive = Date.now()
+          users[user].lastActive = Math.max(lastActive, users[user].lastActive)
         }
       }
 
@@ -233,9 +236,43 @@
       const TIMEOUT_FACTOR = 5
       const userActions = []
 
-      //const corsProxy = 'https://cors-anywhere.com/'
+      //const corsProxy = 'http://0.0.0.0:8080/'
       const corsProxy = 'https://cors-anywhere-render-q53v.onrender.com/'
       const hubUrl = 'https://live.derstandard.at/jetzt/signalr/hub'
+      const apiUrl = 'https://www.derstandard.at/jetzt/api/'
+
+      // Get initial users by downloading postings from the API.
+      async function initializeUsers() {
+        const historyPostings = 300
+        const threadUrl = apiUrl + `redcontent?id=${TICKER_ID}&ps=2`
+
+        // Fetch the last `historyPostings` postings and handle them.
+        let response = await fetch(corsProxy + threadUrl)
+        let threads = (await response.json())['rcs']
+
+        let postingCount = 0
+        for (let thread of threads) {
+          const threadId = thread['id']
+
+          let postingsUrl = apiUrl + `postings?objectId=${TICKER_ID}&redContentId=${threadId}`
+          while (true) {
+            let response = await fetch(corsProxy + postingsUrl)
+            let postings = (await response.json())['p']
+            postingCount += postings.length
+
+            for (let p of postings) {
+              handlePost(p['cn'], new Date(p['cd']).getTime())
+            }
+
+            if (postings.length == 0 || postingCount > historyPostings) break
+
+            let lastId = postings[postings.length - 1]['pid']
+            postingsUrl = apiUrl + `postings?objectId=${TICKER_ID}&redContentId=${threadId}&skipToPostingId=${lastId}`
+            await sleep(500)
+          }
+          if (postingCount > historyPostings) break
+        }
+      }
 
       async function connectWebsocket() {
         let connectionData = await retryFetch(corsProxy + hubUrl + '/negotiate', { scale: 5000 })
@@ -324,8 +361,8 @@
       //  handlePost(name)
       //  users[name].face = FACES[i]
       //}
-
       animate()
+      await initializeUsers()
     </script>
   </body>
 </html>
