@@ -315,10 +315,6 @@
           startUrl = startUrl + '?' + new URLSearchParams(payload)
           await retryFetch(startUrl, { scale: 5000 })
         }
-        ws.onclose = async () => {
-          console.warn('Connection closed. Reconnecting in 10s...')
-          setTimeout(connectWebsocket, 10000)
-        }
         return ws
       }
 
@@ -346,10 +342,12 @@
         if (webSocket == null) {
           // If for some reason the initial connection wasn't established and the web socket is still null,
           // we connect it now. This shouldn't happen.
-          console.warn('Connection not established. Connecting now...')
+          console.warn('Socket not connected. Connecting now...')
           webSocket = await connectWebsocket()
         } else if (Date.now() > lastActivity + timeout) {
           console.warn('Connection timed out. Closing...')
+          webSocket.onopen = null
+          webSocket.onmessage = null
           webSocket.close()
           webSocket = null
         }
