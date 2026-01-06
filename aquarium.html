@@ -247,7 +247,7 @@
         const threadUrl = apiUrl + `redcontent?id=${TICKER_ID}&ps=2`
 
         // Fetch the last `historyPostings` postings and handle them.
-        let response = await fetch(corsProxy + threadUrl)
+        let response = await retryFetch(corsProxy + threadUrl, { scale: 5000 })
         let threads = (await response.json())['rcs']
 
         let postingCount = 0
@@ -256,7 +256,7 @@
 
           let postingsUrl = apiUrl + `postings?objectId=${TICKER_ID}&redContentId=${threadId}`
           while (true) {
-            let response = await fetch(corsProxy + postingsUrl)
+            let response = await retryFetch(corsProxy + postingsUrl, { scale: 5000 })
             let postings = (await response.json())['p']
             postingCount += postings.length
 
