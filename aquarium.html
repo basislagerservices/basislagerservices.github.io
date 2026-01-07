@@ -228,8 +228,13 @@
         '🦁',
         '🦊',
       ]
-      //const CORS_PROXY = 'http://0.0.0.0:8080/'
-      const CORS_PROXY = 'https://basislager-service.onrender.com/'
+      const LOCAL =
+        location.hostname == '0.0.0.0' ||
+        location.hostname == '127.0.0.1' ||
+        location.hostname == 'localhost' ||
+        location.hostname == '::1'
+
+      const CORS_PROXY = LOCAL ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
       const HISTORY_POSTINGS = 300
 
       let sessionId = parseInt(2 ** 32 * Math.random())
