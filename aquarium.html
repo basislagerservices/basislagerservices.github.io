@@ -186,7 +186,7 @@
       async function retryFetch(url, { maxRetries = 10, base = 2, scale = 1000, jitter = 0.2 }) {
         for (let i = 0; i < maxRetries; i++) {
           try {
-            const result = await fetch(url)
+            const result = await fetch(url, { headers: { 'Session-ID': sessionId } })
             if (result.ok) return result
           } catch (err) {
             console.error(err)
@@ -232,6 +232,9 @@
       const CORS_PROXY = 'https://basislager-service.onrender.com/'
       const HISTORY_POSTINGS = 300
 
+      let sessionId = parseInt(2 ** 32 * Math.random())
+        .toString(16)
+        .padStart(8, '0')
       let lastActivity = Date.now() // Last time something was posted or rated.
 
       function hubUrl(path) {
