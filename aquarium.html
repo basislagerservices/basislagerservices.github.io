@@ -39,7 +39,7 @@
       const canvas = document.getElementById('aquarium')
       const ctx = canvas.getContext('2d')
 
-      let users = {}
+      const users = {}
       const INACTIVITY_LIMIT = 3600 * 1000
 
       let lastWidth = window.innerWidth
@@ -112,9 +112,7 @@
         ctx.fillStyle = 'rgba(255, 255, 255, 0.85)'
         ctx.fillText(fish.name, fish.x, fish.y - 18) // draw above the fish
       }
-
-      function animate() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height)
+      function animateFish() {
         const now = Date.now()
 
         for (const [name, fish] of Object.entries(users)) {
@@ -148,7 +146,49 @@
 
           drawFish(fish)
         }
+      }
 
+      const snowflakes = []
+
+      // Create random snowflake objects
+      function createSnowflakes(count = 150) {
+        for (let i = 0; i < count; i++) {
+          snowflakes.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 28 + 10, // emoji pixel size
+            speedY: Math.random() * 1 + 0.5, // vertical speed
+            speedX: Math.random() * 0.8 - 0.4, // horizontal drift
+            emoji: '❄️',
+          })
+        }
+      }
+
+      function drawSnowflake(flake) {
+        ctx.font = `${flake.size}px serif`
+        ctx.fillText(flake.emoji, flake.x, flake.y)
+      }
+
+      function animateSnowflakes() {
+        for (const flake of snowflakes) {
+          drawSnowflake(flake)
+
+          flake.y += flake.speedY
+          flake.x += flake.speedX
+
+          // Wrap when passing bottom
+          if (flake.y > canvas.height + flake.size) {
+            flake.y = -flake.size
+            flake.x = Math.random() * canvas.width
+          }
+        }
+      }
+
+      function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        animateSnowflakes()
+        animateFish()
         requestAnimationFrame(animate)
       }
 
@@ -348,6 +388,7 @@
         }
       }, 30 * 1000)
 
+      createSnowflakes(30)
       animate()
       await initializeUsers()
     </script>
