@@ -36,6 +36,10 @@
     <div id="info">💬 Tickerquarium: Wer postet, schwimmt!</div>
 
     <script type="module">
+      import * as utils from './js/aquarium/utils.js'
+      import { Ticker } from './js/aquarium/ticker.js'
+      import { DEFAULT_FACES } from './js/aquarium/aquarium.js'
+
       const canvas = document.getElementById('aquarium')
       const ctx = canvas.getContext('2d')
 
@@ -200,6 +204,8 @@
         if (lastActive === null) lastActive = Date.now()
         else if (lastActive < Date.now() - INACTIVITY_LIMIT) return
 
+        console.log(user)
+
         if (!users[user]) {
           users[user] = {
             x: Math.random() * canvas.width,
@@ -210,187 +216,30 @@
             speed: 0.5 + Math.random() * 0.5,
             lastActive: lastActive,
             name: user,
-            face: randomElement(FACES),
+            face: randomElement(DEFAULT_FACES),
           }
         } else {
           users[user].lastActive = Math.max(lastActive, users[user].lastActive)
         }
       }
 
-      // Sleep for `ms` milliseconds.
-      function sleep(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms))
-      }
-
-      // Retry fetch with exponential backoff: scale * base**n * (1 + jitter * RANDOM)
-      async function retryFetch(url, { maxRetries = 10, base = 2, scale = 1000, jitter = 0.2 }) {
-        for (let i = 0; i < maxRetries; i++) {
-          try {
-            const result = await fetch(url, { headers: { 'Session-ID': sessionId } })
-            if (result.ok) return result
-          } catch (err) {
-            console.error(err)
-          }
-
-          let delay = scale * base ** i * (1 + jitter * Math.random())
-          console.warn(`Request failed. Retrying in ${delay} ms...`)
-          await sleep(delay)
-        }
-
-        throw new Error('Request failed')
-      }
-
       const TICKER_ID = 3000000299289
-      const CONNECTION_TIMEOUT = 600 * 1000
-      const RECONNECT_JITTER = 0.5
-      const FACES = [
-        '🐨',
-        '🐭',
-        '🐮',
-        '🐯',
-        '🐰',
-        '🐱',
-        '🐵',
-        '🐶',
-        '🐷',
-        '🐸',
-        '🐹',
-        '🐺',
-        '🐻',
-        '🐻‍❄️',
-        '🐼',
-        '😸',
-        '😹',
-        '😺',
-        '😻',
-        '😼',
-        '😽',
-        '🦁',
-        '🦊',
-      ]
-      const LOCAL =
-        location.hostname == '0.0.0.0' ||
-        location.hostname == '127.0.0.1' ||
-        location.hostname == 'localhost' ||
-        location.hostname == '::1'
-
-      const CORS_PROXY = LOCAL ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
+      const CORS_PROXY = utils.isDebugSession() ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
       const HISTORY_POSTINGS = 300
 
-      let sessionId = parseInt(2 ** 32 * Math.random())
-        .toString(16)
-        .padStart(8, '0')
-      let lastActivity = Date.now() // Last time something was posted or rated.
-
-      function hubUrl(path) {
-        const HUB_URL = 'https://live.derstandard.at/jetzt/signalr/hub'
-        return HUB_URL + path
+      let ticker = new Ticker(TICKER_ID, {
+        initPostings: HISTORY_POSTINGS,
+        initThreads: 2,
+        corsProxy: CORS_PROXY,
+        sessionId: utils.createSessionId(),
+      })
+      ticker.onposting = (p) => {
+        handlePost(p.user, p.published.getTime())
       }
 
-      function apiUrl(path) {
-        const API_URL = 'https://www.derstandard.at/jetzt/api'
-        return API_URL + path
-      }
-
-      // Get initial users by downloading postings from the API.
-      async function initializeUsers() {
-        const threadUrl = apiUrl(`/redcontent?id=${TICKER_ID}&ps=2`)
-
-        // Fetch the last `historyPostings` postings and handle them.
-        let response = await retryFetch(CORS_PROXY + threadUrl, { scale: 5000 })
-        let threads = (await response.json())['rcs']
-
-        let postingCount = 0
-        for (let thread of threads) {
-          const threadId = thread['id']
-
-          let postingsUrl = apiUrl(`/postings?objectId=${TICKER_ID}&redContentId=${threadId}`)
-          while (true) {
-            let response = await retryFetch(CORS_PROXY + postingsUrl, { scale: 5000 })
-            let postings = (await response.json())['p']
-            postingCount += postings.length
-
-            for (let p of postings) {
-              handlePost(p['cn'], new Date(p['cd']).getTime())
-            }
-
-            if (postings.length == 0 || postingCount > HISTORY_POSTINGS) break
-
-            let lastId = postings[postings.length - 1]['pid']
-            postingsUrl = apiUrl(`/postings?objectId=${TICKER_ID}&redContentId=${threadId}&skipToPostingId=${lastId}`)
-            await sleep(500)
-          }
-          if (postingCount > HISTORY_POSTINGS) break
-        }
-      }
-
-      async function connectWebsocket() {
-        let connectionData = await retryFetch(CORS_PROXY + hubUrl('/negotiate'), { scale: 5000 })
-        let connectionJson = await connectionData.json()
-
-        let payload = {
-          transport: 'webSockets',
-          clientProtocol: '1.5',
-          lbid: TICKER_ID,
-          v: '1.0.8907.26570',
-          connectionToken: connectionJson.ConnectionToken,
-          connectionData: '[{"name": "reporthub"}]',
-          tid: '10',
-        }
-
-        let connectUrl = new URL(hubUrl('/connect'))
-        connectUrl.protocol = 'wss:'
-        connectUrl = connectUrl + '?' + new URLSearchParams(payload)
-
-        const ws = new WebSocket(connectUrl)
-        ws.onmessage = (event) => {
-          let data = JSON.parse(event.data)
-          for (const ea of data.M || []) {
-            if (ea.M == 'addPostings' || ea.M == 'updateVotes') {
-              lastActivity = Date.now()
-            }
-
-            if (ea.M != 'addPostings') continue
-
-            for (const eb of ea.A || []) {
-              for (const ec of eb) {
-                console.info('User activity:', ec.cn)
-                handlePost(ec.cn)
-              }
-            }
-          }
-        }
-        ws.onopen = async (event) => {
-          let startUrl = new URL(CORS_PROXY + hubUrl('/start'))
-          startUrl = startUrl + '?' + new URLSearchParams(payload)
-          await retryFetch(startUrl, { scale: 5000 })
-        }
-        return ws
-      }
-
-      // Establish the initial connection to the ticker.
-      let webSocket = await connectWebsocket()
-
-      // Check for timeouts every few seconds.
-      setInterval(async () => {
-        const timeout = CONNECTION_TIMEOUT * (1 + RECONNECT_JITTER * Math.random())
-        if (webSocket == null) {
-          // If for some reason the initial connection wasn't established and the web socket is still null,
-          // we connect it now. This shouldn't happen.
-          console.warn('Socket not connected. Connecting now...')
-          webSocket = await connectWebsocket()
-        } else if (Date.now() > lastActivity + timeout) {
-          console.warn('Connection timed out. Closing...')
-          webSocket.onopen = null
-          webSocket.onmessage = null
-          webSocket.close()
-          webSocket = null
-        }
-      }, 30 * 1000)
-
-      createSnowflakes(30)
       animate()
-      await initializeUsers()
+      createSnowflakes(30)
+      await ticker.connect()
     </script>
   </body>
 </html>
