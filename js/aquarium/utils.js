@@ -30,7 +30,7 @@ export async function retryFetch(url, { maxRetries = 10, base = 2, scale = 1000,
       console.error(err)
     }
 
-    let delay = scale * base ** i * (1 + jitter * Math.random())
+    const delay = scale * base ** i * (1 + jitter * Math.random())
     console.warn(`Request failed. Retrying in ${delay} ms...`)
     await sleep(delay)
   }
@@ -41,16 +41,16 @@ export async function retryFetch(url, { maxRetries = 10, base = 2, scale = 1000,
 /** Check some properties to determine if we are in a debug session. */
 export function isDebugSession() {
   return (
-    location.hostname == '0.0.0.0' ||
-    location.hostname == '127.0.0.1' ||
-    location.hostname == 'localhost' ||
-    location.hostname == '::1'
+    location.hostname === '0.0.0.0' ||
+    location.hostname === '127.0.0.1' ||
+    location.hostname === 'localhost' ||
+    location.hostname === '::1'
   )
 }
 
 /** Create a random session ID string. */
 export function createSessionId() {
-  return parseInt(2 ** 32 * Math.random())
+  return parseInt(2 ** 32 * Math.random(), 10)
     .toString(16)
     .padStart(8, '0')
 }

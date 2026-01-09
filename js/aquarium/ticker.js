@@ -18,11 +18,13 @@
 import { retryFetch, sleep } from './utils.js'
 
 function hubUrl(path) {
-  return new URL('https://live.derstandard.at/jetzt/signalr/hub' + path)
+  path = path.startsWith('/') ? path : `/${path}`
+  return new URL(`https://live.derstandard.at/jetzt/signalr/hub${path}`)
 }
 
 function apiUrl(path) {
-  return new URL('https://www.derstandard.at/jetzt/api' + path)
+  path = path.startsWith('/') ? path : `/${path}`
+  return new URL(`https://www.derstandard.at/jetzt/api${path}`)
 }
 
 /** Connect to a ticker and monitor it. */
@@ -37,7 +39,7 @@ export class Ticker {
     this.webSocket = null
     this.initPostings = initPostings
     this.initThreads = initThreads
-    this.corsProxy = corsProxy && !corsProxy.endsWith('/') ? corsProxy + '/' : corsProxy
+    this.corsProxy = corsProxy && !corsProxy.endsWith('/') ? `${corsProxy}/` : corsProxy
     this.lastActivity = Date.now()
     this.intervalId = null
     this.fetchArgs = { headers: { 'Session-ID': sessionId } }
@@ -67,7 +69,7 @@ export class Ticker {
 
   async #checkTimeout() {
     const timeout = Ticker.#CONNECTION_TIMEOUT * (1 + Ticker.#RECONNECT_JITTER * Math.random())
-    if (this.webSocket == null) {
+    if (this.webSocket === null) {
       console.warn('Socket not connected. Connecting now...')
       await this.#connectWebSocket()
     } else if (Date.now() > this.lastActivity + timeout) {
@@ -79,10 +81,10 @@ export class Ticker {
   /** Establish a connection to the ticker websocket. */
   async #connectWebSocket() {
     const negUrl = this.corsProxy + hubUrl('/negotiate')
-    let connResp = await retryFetch(negUrl, { scale: 5000, fetchArgs: this.fetchArgs })
-    let connData = await connResp.json()
+    const connResp = await retryFetch(negUrl, { scale: 5000, fetchArgs: this.fetchArgs })
+    const connData = await connResp.json()
 
-    let payload = {
+    const payload = {
       transport: 'webSockets',
       clientProtocol: '1.5',
       lbid: this.tickerId,
@@ -94,7 +96,7 @@ export class Ticker {
     let connUrl = hubUrl('/connect')
     connUrl.protocol = 'wss:'
     connUrl = connUrl + '?' + new URLSearchParams(payload)
-    let ws = new WebSocket(connUrl)
+    const ws = new WebSocket(connUrl)
 
     // Enable the web socket on the server side when it is connected.
     ws.onopen = async (event) => {
@@ -117,7 +119,7 @@ export class Ticker {
   }
 
   #handleLiveMessage(event) {
-    let data = JSON.parse(event.data)
+    const data = JSON.parse(event.data)
     for (const ea of data.M || []) {
       if (ea.M === 'addPostings' || ea.M === 'updateVotes') {
         this.lastActivity = Date.now()
@@ -128,7 +130,7 @@ export class Ticker {
             this.#handlePosting(ec)
           }
         }
-      } else if (ea.M == 'updateVotes' && this.onrating !== null) {
+      } else if (ea.M === 'updateVotes' && this.onrating !== null) {
         console.error('Vote handling not implemented')
       }
     }
@@ -137,25 +139,25 @@ export class Ticker {
   /** Get at most `initPostings` from the last `initThreads` threads. */
   async #initializePostings() {
     const threadUrl = this.corsProxy + apiUrl(`/redcontent?id=${this.tickerId}&ps=${this.initThreads}`)
-    let threadResp = await retryFetch(threadUrl, { scale: 5000, fetchArgs: this.fetchArgs })
-    let threadData = await threadResp.json()
+    const threadResp = await retryFetch(threadUrl, { scale: 5000, fetchArgs: this.fetchArgs })
+    const threadData = await threadResp.json()
 
     let postingCount = 0
-    for (let thread of threadData['rcs'].slice(0, this.initThreads)) {
-      const threadId = thread['id']
+    for (const thread of threadData.rcs.slice(0, this.initThreads)) {
+      const threadId = thread.id
       let postUrl = this.corsProxy + apiUrl(`/postings?objectId=${this.tickerId}&redContentId=${threadId}`)
       while (true) {
-        let postResp = await retryFetch(postUrl, { scale: 5000, fetchArgs: this.fetchArgs })
-        let postings = (await postResp.json())['p']
+        const postResp = await retryFetch(postUrl, { scale: 5000, fetchArgs: this.fetchArgs })
+        const postings = (await postResp.json()).p
         postingCount += postings.length
 
-        for (let p of postings) {
+        for (const p of postings) {
           if (this.onposting !== null) this.#handlePosting(p)
         }
 
-        if (postings.length == 0 || postingCount > this.initPostings) break
+        if (postings.length === 0 || postingCount > this.initPostings) break
 
-        let lastId = postings[postings.length - 1]['pid']
+        const lastId = postings[postings.length - 1].pid
         postUrl =
           this.corsProxy +
           apiUrl(`/postings?objectId=${this.tickerId}&redContentId=${threadId}&skipToPostingId=${lastId}`)
