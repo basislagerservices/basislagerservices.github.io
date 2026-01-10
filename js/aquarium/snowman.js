@@ -48,11 +48,20 @@ export class SnowmanLayer extends Layer {
 
   /** Trigger a jump when a new posting arrives. */
   handlePosting(p) {
-    if (p.source === "history")
-        return
+    if (p.source === 'history') return
+    this.#startJump()
+  }
 
+  /** Trigger a jump when a new vote update arrives. */
+  handleVoteUpdate(u) {
+    this.#startJump()
+  }
+
+  #startJump() {
     // Randomize direction: left (-1) or right (+1)
-    const dir = Math.random() < 0.5 ? -1 : 1
+    let dir = Math.random() < 0.5 ? -1 : 1
+    if (this.x < this.fontSize) dir = 1
+    else if (this.x > this.canvas.width - this.fontSize) dir = -1
 
     // Random horizontal speed
     const vxRand = HORIZONTAL_SPEED * (0 + Math.random() * 1.0)
@@ -94,8 +103,8 @@ export class SnowmanLayer extends Layer {
       }
 
       // Keep within bounds horizontally
-      if (this.x < 0) this.x = 0
-      if (this.x > this.canvas.width) this.x = this.canvas.width
+      if (this.x < 0) this.x = this.fontSize
+      if (this.x > this.canvas.width) this.x = this.canvas.width - this.fontSize
     }
 
     // Draw snowman at position
