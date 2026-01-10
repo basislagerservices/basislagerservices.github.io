@@ -17,14 +17,16 @@
 
 import { retryFetch, sleep } from './utils.js'
 
+/** Get the URL for the live ticker hub. */
 function hubUrl(path) {
   path = path.startsWith('/') ? path : `/${path}`
-  return new URL(`https://live.derstandard.at/jetzt/signalr/hub${path}`)
+  return new URL('https://live.derstandard.at/jetzt/signalr/hub' + path)
 }
 
+/** Get the URL for the regular ticker API. */
 function apiUrl(path) {
   path = path.startsWith('/') ? path : `/${path}`
-  return new URL(`https://www.derstandard.at/jetzt/api${path}`)
+  return new URL('https://www.derstandard.at/jetzt/api' + path)
 }
 
 /** Connect to a ticker and monitor it. */
@@ -42,7 +44,7 @@ export class Ticker {
     this.corsProxy = corsProxy && !corsProxy.endsWith('/') ? `${corsProxy}/` : corsProxy
     this.lastActivity = Date.now()
     this.intervalId = null
-    this.fetchArgs = { headers: { 'Session-ID': sessionId } }
+    this.fetchConfig = { scale: 5000, fetchArgs: { headers: { 'Session-ID': sessionId } } }
   }
 
   /** Event handler for received postings. */
@@ -81,7 +83,7 @@ export class Ticker {
   /** Establish a connection to the ticker websocket. */
   async #connectWebSocket() {
     const negUrl = this.corsProxy + hubUrl('/negotiate')
-    const connResp = await retryFetch(negUrl, { scale: 5000, fetchArgs: this.fetchArgs })
+    const connResp = await retryFetch(negUrl, this.fetchConfig)
     const connData = await connResp.json()
 
     const payload = {
@@ -99,10 +101,10 @@ export class Ticker {
     const ws = new WebSocket(connUrl)
 
     // Enable the web socket on the server side when it is connected.
-    ws.onopen = async (event) => {
+    ws.onopen = async (_event) => {
       let startUrl = new URL(this.corsProxy + hubUrl('/start'))
       startUrl = startUrl + '?' + new URLSearchParams(payload)
-      await retryFetch(startUrl, { scale: 5000, fetchArgs: this.fetchArgs })
+      await retryFetch(startUrl, this.fetchConfig)
     }
 
     // Parse message and call appropriate handlers with sanitized messages.
@@ -138,8 +140,12 @@ export class Ticker {
 
   /** Get at most `initPostings` from the last `initThreads` threads. */
   async #initializePostings() {
+    if (this.onposting === null || this.initPostings === 0 || this.initThreads === 0) {
+      return
+    }
+
     const threadUrl = this.corsProxy + apiUrl(`/redcontent?id=${this.tickerId}&ps=${this.initThreads}`)
-    const threadResp = await retryFetch(threadUrl, { scale: 5000, fetchArgs: this.fetchArgs })
+    const threadResp = await retryFetch(threadUrl, this.fetchConfig)
     const threadData = await threadResp.json()
 
     let postingCount = 0
@@ -147,12 +153,12 @@ export class Ticker {
       const threadId = thread.id
       let postUrl = this.corsProxy + apiUrl(`/postings?objectId=${this.tickerId}&redContentId=${threadId}`)
       while (true) {
-        const postResp = await retryFetch(postUrl, { scale: 5000, fetchArgs: this.fetchArgs })
+        const postResp = await retryFetch(postUrl, this.fetchConfig)
         const postings = (await postResp.json()).p
         postingCount += postings.length
 
         for (const p of postings) {
-          if (this.onposting !== null) this.#handlePosting(p)
+          this.#handlePosting(p)
         }
 
         if (postings.length === 0 || postingCount > this.initPostings) break
