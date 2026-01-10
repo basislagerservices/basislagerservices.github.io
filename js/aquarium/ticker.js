@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { retryFetch, sleep } from './utils.js'
+import { retryFetch, sleep, Logging } from './utils.js'
 
 /** Get the URL for the live ticker hub. */
 function hubUrl(path) {
@@ -30,13 +30,14 @@ function apiUrl(path) {
 }
 
 /** Connect to a ticker and monitor it. */
-export class Ticker {
+export class Ticker extends Logging {
   static #CONNECTION_TIMEOUT = 600 * 1000
   static #RECONNECT_JITTER = 0.5
   static #CONNECTION_POLL_INTERVAL = 30 * 1000
   static #INIT_POSTINGS_DELAY = 1000
 
   constructor(tickerId, { initPostings = 100, initThreads = 10, corsProxy = '', sessionId = null } = {}) {
+    super()
     this.tickerId = tickerId
     this.webSocket = null
     this.initPostings = initPostings
@@ -72,10 +73,10 @@ export class Ticker {
   async #checkTimeout() {
     const timeout = Ticker.#CONNECTION_TIMEOUT * (1 + Ticker.#RECONNECT_JITTER * Math.random())
     if (this.webSocket === null) {
-      console.warn('Socket not connected. Connecting now...')
+      this.warn('Socket not connected. Connecting now...')
       await this.#connectWebSocket()
     } else if (Date.now() > this.lastActivity + timeout) {
-      console.warn('Connection timed out. Closing...')
+      this.warn('Connection timed out. Closing...')
       this.#closeWebSocket()
     }
   }
@@ -133,7 +134,7 @@ export class Ticker {
           }
         }
       } else if (ea.M === 'updateVotes' && this.onrating !== null) {
-        console.error('Vote handling not implemented')
+        this.error('Vote handling not implemented')
       }
     }
   }
@@ -174,7 +175,7 @@ export class Ticker {
   }
 
   #handlePosting(e) {
-    this.onposting({
+    const posting = {
       user_id: e.cid,
       user: e.cn,
       title: e.hl,
@@ -184,6 +185,8 @@ export class Ticker {
       posting_id: e.pid,
       parent_id: e.ppid,
       published: new Date(e.cd),
-    })
+    }
+    this.debug(posting)
+    this.onposting(posting)
   }
 }

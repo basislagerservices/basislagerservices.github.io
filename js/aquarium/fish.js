@@ -16,6 +16,7 @@
  */
 
 import { randomElement } from './utils.js'
+import { Layer } from './layer.js'
 
 // prettier-ignore
 export const DEFAULT_FACES = [
@@ -26,17 +27,13 @@ export const DEFAULT_FACES = [
 /**
  * Animate fish with faces onto the canvas when a posting is published.
  */
-export class FishLayer {
+export class FishLayer extends Layer {
   constructor(canvas, { inactivityLimit = 3600 * 1000, faces = DEFAULT_FACES } = {}) {
-    this.canvas = canvas
-    this.ctx = this.canvas.getContext('2d')
+    super(canvas)
 
     this.inactivityLimit = inactivityLimit
     this.faces = faces
     this.activeUsers = {}
-
-    this.currentWidth = this.canvas.width
-    this.currentHeight = this.canvas.height
   }
 
   animate() {
@@ -91,18 +88,15 @@ export class FishLayer {
     }
   }
 
-  resize() {
+  resize(oldWidth, oldHeight, newWidth, newHeight) {
     // Scale fish positions to new size
-    const scaleX = this.canvas.width / this.currentWidth
-    const scaleY = this.canvas.height / this.currentHeight
+    const scaleX = newWidth / oldWidth
+    const scaleY = newHeight / oldHeight
 
     for (const fish of Object.values(this.activeUsers)) {
       fish.x *= scaleX
       fish.y *= scaleY
     }
-
-    this.currentWidth = this.canvas.width
-    this.currentHeight = this.canvas.height
   }
 
   #drawFish(fish) {

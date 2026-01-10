@@ -15,14 +15,14 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
+import { Layer } from './layer.js'
+
 /**
  * Animate snow falling in the canvas.
  */
-export class SnowLayer {
+export class SnowLayer extends Layer {
   constructor(canvas, flakeCount) {
-    this.canvas = canvas
-    this.ctx = this.canvas.getContext('2d')
-
+    super(canvas)
     this.snowflakes = []
     this.#createSnowflakes(flakeCount)
   }
@@ -42,9 +42,15 @@ export class SnowLayer {
     }
   }
 
-  handlePosting(_p) {}
+  resize(oldWidth, oldHeight, newWidth, newHeight) {
+    const scaleX = newWidth / oldWidth
+    const scaleY = newHeight / oldHeight
 
-  resize() {}
+    for (const flake of this.snowflakes) {
+      flake.x *= scaleX
+      flake.y *= scaleY
+    }
+  }
 
   #createSnowflakes(count) {
     for (let i = 0; i < count; i++) {

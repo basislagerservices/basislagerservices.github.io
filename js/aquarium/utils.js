@@ -59,3 +59,29 @@ export function createSessionId() {
 export function randomElement(array) {
   return array[Math.floor(Math.random() * array.length)]
 }
+
+/** Simple logger mixin that displays the class name. */
+export class Logging {
+  #prefix
+
+  constructor(prefix = null) {
+    this.#prefix = `[${this.constructor.name}]`
+    if (prefix !== null) this.#prefix = prefix
+  }
+
+  debug(...args) {
+    console.debug(`${this.#prefix}`, ...args)
+  }
+
+  info(...args) {
+    console.info(`${this.#prefix}`, ...args)
+  }
+
+  warn(...args) {
+    console.warn(`${this.#prefix}`, ...args)
+  }
+
+  error(...args) {
+    console.error(`${this.#prefix}`, ...args)
+  }
+}

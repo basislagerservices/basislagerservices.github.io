@@ -30,6 +30,9 @@ export class TickerAnimation {
     this.layers = layers
     this.ctx = this.canvas.getContext('2d')
 
+    this.canvasWidth = canvas.width
+    this.canvasHeight = canvas.height
+
     this.ticker = new Ticker(tickerId, {
       initPostings: initPostings,
       initThreads: initThreads,
@@ -66,7 +69,9 @@ export class TickerAnimation {
     this.canvas.width = window.innerWidth
     this.canvas.height = window.innerHeight
     for (const layer of this.layers) {
-      layer.resize()
+      layer.resize(this.canvasWidth, this.canvasHeight, this.canvas.width, this.canvas.height)
     }
+    this.canvasWidth = this.canvas.width
+    this.canvasHeight = this.canvas.height
   }
 }
