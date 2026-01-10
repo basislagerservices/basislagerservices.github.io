@@ -38,6 +38,7 @@
       import { isDebugSession } from './js/aquarium/utils.js'
       import { FishLayer } from './js/aquarium/fish.js'
       import { SnowLayer } from './js/aquarium/snow.js'
+      import { SnowmanLayer } from './js/aquarium/snowman.js'
 
       const TICKER_ID = 3000000299289
       const CORS_PROXY = isDebugSession() ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
@@ -48,6 +49,7 @@
       // prettier-ignore
       const layers = [
         new SnowLayer(canvas, 30),
+        new SnowmanLayer(canvas),
         new FishLayer(canvas, 3600 * 1000),
       ]
       let aquarium = new TickerAnimation(canvas, TICKER_ID, layers, { corsProxy: CORS_PROXY })
