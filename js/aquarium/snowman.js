@@ -54,6 +54,7 @@ export class SnowmanLayer extends Layer {
 
   /** Trigger a jump when a new vote update arrives. */
   handleVoteUpdate(u) {
+    if (u.source === 'history') return
     this.#startJump()
   }
 

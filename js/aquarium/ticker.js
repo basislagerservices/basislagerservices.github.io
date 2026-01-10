@@ -136,7 +136,7 @@ export class Ticker extends Logging {
       } else if (ea.M === 'updateVotes' && this.onvoteupdate !== null) {
         for (const eb of ea.A || []) {
           for (const ec of eb) {
-            this.#handleVoteUpdate(ec)
+            this.#handleVoteUpdate(ec, 'live')
           }
         }
       }
@@ -164,6 +164,7 @@ export class Ticker extends Logging {
 
         for (const p of postings) {
           this.#handlePosting(p, 'history')
+          this.#handleVoteUpdate(p, 'history')
         }
 
         if (postings.length === 0 || postingCount > this.initPostings) break
@@ -195,13 +196,14 @@ export class Ticker extends Logging {
     this.onposting(posting)
   }
 
-  #handleVoteUpdate(e) {
+  #handleVoteUpdate(e, source) {
     const update = {
       ticker_id: e.oid,
       thread_id: e.rid,
       posting_id: e.pid === undefined ? null : e.pid,
-      positive: e.pvc,
-      negative: e.nvc,
+      positive: e.pvc || e.vp,
+      negative: e.nvc || e.vn,
+      source: source,
     }
     this.onvoteupdate(update)
   }

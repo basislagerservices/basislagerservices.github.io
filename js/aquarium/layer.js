@@ -71,9 +71,14 @@ export class Layer extends Logging {
    * - thread_id: ID of the thread
    * - positive: New number of positive votes
    * - negative: New number of negative votes
+   * - source: Internal value to indicate the source of the vote state.
+   *           Either "live" if it was received from the websocket or "history" if
+   *           it was from the API.
    *
    * For posting votes, an additional field is provided:
    * - posting_id: ID of the posting
+   *
+   * The number of votes is always the total number.
    */
   handleVoteUpdate(u) {}
 
