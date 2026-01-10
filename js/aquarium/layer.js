@@ -32,7 +32,15 @@ export class Layer extends Logging {
     this.ctx = this.canvas.getContext('2d')
   }
 
-  /** Draw the current state onto the canvas. */
+  /**
+   * Draw the current state onto the canvas.
+   *
+   * Do not clear the context unless you want to override previous layers.
+   * This usually not recommended.
+   *
+   * Before this function is called, the animation manager calls `ctx.save()` and
+   * restores the state afterwards with `ctx.restore()`.
+   * */
   animate() {}
 
   /**
@@ -47,10 +55,27 @@ export class Layer extends Logging {
    * - thread_id: ID of the thread where it was posted
    * - posting_id: ID of the posting
    * - parent_id: ID of the parent posting
+   * - source: Internal value to indicate the source of the posting.
+   *           Either "live" if it was received from the websocket or "history" if
+   *           it was from the API.
    *
    * Some fields might be `null` or an empty string.
    */
   handlePosting(p) {}
+
+  /**
+   * Update the state when votes of postings are updated.
+   *
+   * An update contains at least the following fields for thread votes:
+   * - ticker_id: ID of the ticker
+   * - thread_id: ID of the thread
+   * - positive: New number of positive votes
+   * - negative: New number of negative votes
+   *
+   * For posting votes, an additional field is provided:
+   * - posting_id: ID of the posting
+   */
+  handleVoteUpdate(u) {}
 
   /**
    * Update the state when the canvas is resized.

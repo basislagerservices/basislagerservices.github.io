@@ -16,7 +16,7 @@
  */
 
 import { Ticker } from './ticker.js'
-import { createSessionId } from './utils.js'
+import { createSessionId, Logging } from './utils.js'
 
 /**
  * Class to encapsulate animation and ticker connection logic.
@@ -24,8 +24,9 @@ import { createSessionId } from './utils.js'
  * Layers are drawn onto a canvas and their appropriate posting handlers are called
  * when a new posting is published in the ticker.
  */
-export class TickerAnimation {
+export class TickerAnimation extends Logging {
   constructor(canvas, tickerId, layers, { corsProxy = '', initPostings = 100, initThreads = 2 } = {}) {
+    super()
     this.canvas = canvas
     this.layers = layers
     this.ctx = this.canvas.getContext('2d')
@@ -40,6 +41,7 @@ export class TickerAnimation {
       sessionId: createSessionId(),
     })
     this.ticker.onposting = (p) => this.#handlePosting(p)
+    this.ticker.onvoteupdate = (u) => this.#handleVoteUpdate(u)
 
     window.addEventListener('resize', () => this.#resize())
     this.#resize()
@@ -57,10 +59,18 @@ export class TickerAnimation {
     }
   }
 
+  #handleVoteUpdate(u) {
+    for (const layer of this.layers) {
+      layer.handleVoteUpdate(u)
+    }
+  }
+
   #animate() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
     for (const layer of this.layers) {
+      this.ctx.save()
       layer.animate()
+      this.ctx.restore()
     }
     requestAnimationFrame(() => this.#animate())
   }

@@ -51,8 +51,8 @@ export class Ticker extends Logging {
   /** Event handler for received postings. */
   onposting = null
 
-  /** Event handler for ratings. */
-  onrating = null
+  /** Event handler for vote updates. */
+  onvoteupdate = null
 
   /**
    * Establish a connection to the ticker and start monitoring it.
@@ -130,11 +130,15 @@ export class Ticker extends Logging {
       if (ea.M === 'addPostings' && this.onposting !== null) {
         for (const eb of ea.A || []) {
           for (const ec of eb) {
-            this.#handlePosting(ec)
+            this.#handlePosting(ec, 'live')
           }
         }
-      } else if (ea.M === 'updateVotes' && this.onrating !== null) {
-        this.error('Vote handling not implemented')
+      } else if (ea.M === 'updateVotes' && this.onvoteupdate !== null) {
+        for (const eb of ea.A || []) {
+          for (const ec of eb) {
+            this.#handleVoteUpdate(ec)
+          }
+        }
       }
     }
   }
@@ -159,7 +163,7 @@ export class Ticker extends Logging {
         postingCount += postings.length
 
         for (const p of postings) {
-          this.#handlePosting(p)
+          this.#handlePosting(p, 'history')
         }
 
         if (postings.length === 0 || postingCount > this.initPostings) break
@@ -174,7 +178,7 @@ export class Ticker extends Logging {
     }
   }
 
-  #handlePosting(e) {
+  #handlePosting(e, source) {
     const posting = {
       user_id: e.cid,
       user: e.cn,
@@ -185,8 +189,20 @@ export class Ticker extends Logging {
       posting_id: e.pid,
       parent_id: e.ppid,
       published: new Date(e.cd),
+      source: source,
     }
     this.debug(posting)
     this.onposting(posting)
+  }
+
+  #handleVoteUpdate(e) {
+    const update = {
+      ticker_id: e.oid,
+      thread_id: e.rid,
+      posting_id: e.pid === undefined ? null : e.pid,
+      positive: e.pvc,
+      negative: e.nvc,
+    }
+    this.onvoteupdate(update)
   }
 }

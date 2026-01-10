@@ -33,8 +33,6 @@
   </head>
   <body>
     <canvas id="aquarium"></canvas>
-    <div id="info">💬 Tickerquarium: Wer postet, schwimmt!</div>
-
     <script type="module">
       import { TickerAnimation } from './js/aquarium/animation.js'
       import { isDebugSession } from './js/aquarium/utils.js'
@@ -49,8 +47,8 @@
 
       // prettier-ignore
       const layers = [
-        new SnowLayer(canvas, 50),
-        new FishLayer(canvas, 3600 * 1000)
+        new SnowLayer(canvas, 30),
+        new FishLayer(canvas, 3600 * 1000),
       ]
       let aquarium = new TickerAnimation(canvas, TICKER_ID, layers, { corsProxy: CORS_PROXY })
       await aquarium.start()

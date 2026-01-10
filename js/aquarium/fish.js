@@ -71,6 +71,10 @@ export class FishLayer extends Layer {
   }
 
   handlePosting(p) {
+    // Modifying the timestamp avoids socket delays for effects.
+    const published = p.source === 'live' ? Date.now() : p.published.getTime()
+    if (published < Date.now() - this.inactivityLimit) return
+
     if (!this.activeUsers[p.user]) {
       this.activeUsers[p.user] = {
         x: Math.random() * this.canvas.width,
@@ -79,12 +83,12 @@ export class FishLayer extends Layer {
         color: Math.random() * 360,
         offset: Math.random() * Math.PI * 2,
         speed: 0.5 + Math.random() * 0.5,
-        lastActive: p.published.getTime(),
+        lastActive: published,
         name: p.user,
         face: randomElement(this.faces),
       }
     } else {
-      this.activeUsers[p.user].lastActive = Math.max(p.published.getTime(), this.activeUsers[p.user].lastActive)
+      this.activeUsers[p.user].lastActive = Math.max(published, this.activeUsers[p.user].lastActive)
     }
   }
 
