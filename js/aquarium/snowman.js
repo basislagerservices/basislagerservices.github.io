@@ -61,8 +61,6 @@ export class SnowmanLayer extends Layer {
   #startJump() {
     // Randomize direction: left (-1) or right (+1)
     let dir = Math.random() < 0.5 ? -1 : 1
-    if (this.x < this.fontSize) dir = 1
-    else if (this.x > this.canvas.width - this.fontSize) dir = -1
 
     // Random horizontal speed
     const vxRand = HORIZONTAL_SPEED * (0 + Math.random() * 1.0)
@@ -104,8 +102,17 @@ export class SnowmanLayer extends Layer {
       }
 
       // Keep within bounds horizontally
-      if (this.x < 0) this.x = this.fontSize
-      if (this.x > this.canvas.width) this.x = this.canvas.width - this.fontSize
+      this.x = Math.max(this.x, this.fontSize)
+      this.x = Math.min(this.x, this.canvas.width - this.fontSize)
+
+      // Clamp X and change on borders.
+      if (this.x <= this.fontSize) {
+        this.x = this.fontSize
+        this.vx = -this.vx
+      } else if (this.x >= this.canvas.width - this.fontSize) {
+        this.x = this.canvas.width - this.fontSize
+        this.vx = -this.vx
+      }
     }
 
     // Draw snowman at position
