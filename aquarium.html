@@ -38,6 +38,7 @@
       import { isDebugSession } from './js/aquarium/utils.js'
       import { FishLayer } from './js/aquarium/fish.js'
       import { SnowLayer } from './js/aquarium/snow.js'
+      import { BubbleLayer } from './js/aquarium/bubbles.js'
       import { SnowmanLayer } from './js/aquarium/snowman.js'
 
       const TICKER_ID = 3000000299289
@@ -48,7 +49,8 @@
 
       // prettier-ignore
       const layers = [
-        new SnowLayer(canvas, 30),
+        //new SnowLayer(canvas, 30),
+        new BubbleLayer(canvas, 30),
         new SnowmanLayer(canvas),
         new FishLayer(canvas, 3600 * 1000),
       ]
