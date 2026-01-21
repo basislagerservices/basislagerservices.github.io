@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -41,7 +41,12 @@
       import { BubbleLayer } from './js/aquarium/bubbles.js'
       import { SnowmanLayer } from './js/aquarium/snowman.js'
 
-      const TICKER_ID = 3000000299289
+      // Default ticker ID (Basislager)
+      let tickerId = 3000000299289
+
+      let urlParams = new URLSearchParams(document.location.search)
+      if (urlParams.get('ticker')) tickerId = urlParams.get('ticker')
+
       const CORS_PROXY = isDebugSession() ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
       const canvas = document.getElementById('aquarium')
       canvas.width = window.innerWidth
@@ -54,7 +59,7 @@
         new SnowmanLayer(canvas),
         new FishLayer(canvas, 3600 * 1000),
       ]
-      let aquarium = new TickerAnimation(canvas, TICKER_ID, layers, { corsProxy: CORS_PROXY })
+      let aquarium = new TickerAnimation(canvas, tickerId, layers, { corsProxy: CORS_PROXY })
       await aquarium.start()
     </script>
   </body>
