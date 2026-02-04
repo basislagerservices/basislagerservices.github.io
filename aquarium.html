@@ -39,7 +39,7 @@
       import { FishLayer } from './js/aquarium/fish.js'
       import { SnowLayer } from './js/aquarium/snow.js'
       import { BubbleLayer } from './js/aquarium/bubbles.js'
-      import { SnowmanLayer } from './js/aquarium/snowman.js'
+      import { JumpEmojiLayer } from './js/aquarium/jumpemoji.js'
 
       // Default ticker ID (Basislager)
       let tickerId = 3000000299289
@@ -56,7 +56,7 @@
       const layers = [
         //new SnowLayer(canvas, 30),
         new BubbleLayer(canvas, 30),
-        new SnowmanLayer(canvas),
+        new JumpEmojiLayer(canvas, "️🍨"),
         new FishLayer(canvas, 3600 * 1000),
       ]
       let aquarium = new TickerAnimation(canvas, tickerId, layers, { corsProxy: CORS_PROXY })

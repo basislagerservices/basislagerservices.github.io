@@ -22,11 +22,12 @@ const HORIZONTAL_SPEED = 300 // Base horizontal speed (randomized)
 const JUMP_HEIGHT = 300 // Base jump height (randomized)
 
 /**
- * A Snowman layer: whenever a posting arrives, a snowman jumps.
+ * An emoji layer: whenever a posting arrives, an emoji jumps.
  */
-export class SnowmanLayer extends Layer {
-  constructor(canvas) {
+export class JumpEmojiLayer extends Layer {
+  constructor(canvas, emoji) {
     super(canvas)
+    this.emoji = emoji
 
     // Jump state
     this.vx = 0 // horizontal velocity
@@ -36,14 +37,13 @@ export class SnowmanLayer extends Layer {
 
     // Emoji size measurement
     this.fontSize = 64
-    this.snowman = '⛄️'
 
     // Position: bottom middle of the canvas
     this.x = this.canvas.width / 2
     this.y = this.canvas.height - this.fontSize / 2
 
     this.ctx.font = `${this.fontSize}px sans-serif`
-    this.textMetrics = this.ctx.measureText(this.snowman)
+    this.textMetrics = this.ctx.measureText(this.emoji)
   }
 
   /** Trigger a jump when a new posting arrives. */
@@ -79,7 +79,7 @@ export class SnowmanLayer extends Layer {
   }
 
   /**
-   * Animate the snowman (called every frame).
+   * Animate the emoji (called every frame).
    */
   animate() {
     const now = performance.now()
@@ -115,11 +115,11 @@ export class SnowmanLayer extends Layer {
       }
     }
 
-    // Draw snowman at position
+    // Draw emoji at position
     this.ctx.font = `${this.fontSize}px sans-serif`
     this.ctx.textBaseline = 'middle'
     this.ctx.textAlign = 'center'
-    this.ctx.fillText(this.snowman, this.x, this.y)
+    this.ctx.fillText(this.emoji, this.x, this.y)
   }
 
   /** Recompute position on resize. */
