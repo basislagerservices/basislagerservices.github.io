@@ -126,13 +126,16 @@
       const rankingPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json'
       const deletedPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json'
       const deletedAutoPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted-auto.json'
-      const aliasesPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/user-aliases.json'
+      const aliasesPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/user-aliases.txt'
 
       const ranking = await (await fetch(rankingPath)).json()
       const deletedManual = await (await fetch(deletedPath)).json()
       const deletedAuto = await (await fetch(deletedAutoPath)).json()
       const deleted = { ...deletedManual, ...deletedAuto }
-      const aliases = await (await fetch(aliasesPath)).json()
+      const aliases = (await (await fetch(aliasesPath)).text())
+        .split('\n\n')
+        .map((s) => s.split('\n').filter((s) => s))
+        .filter((g) => g)
 
       // Create a one-to-many alias index.
       const aliasIndex = {}
