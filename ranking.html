@@ -126,11 +126,21 @@
       const rankingPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/ranking.json'
       const deletedPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted.json'
       const deletedAutoPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/deleted-auto.json'
+      const aliasesPath = 'https://raw.githubusercontent.com/basislagerservices/data/main/ranking/user-aliases.json'
 
       const ranking = await (await fetch(rankingPath)).json()
       const deletedManual = await (await fetch(deletedPath)).json()
       const deletedAuto = await (await fetch(deletedAutoPath)).json()
       const deleted = { ...deletedManual, ...deletedAuto }
+      const aliases = await (await fetch(aliasesPath)).json()
+
+      // Create a one-to-many alias index.
+      const aliasIndex = {}
+      for (const group of aliases) {
+        for (const name of group) {
+          aliasIndex[name] = group.filter((x) => x !== name)
+        }
+      }
 
       let dateInfo = ' (' + ranking['date'] + ')'
       document.querySelector('#ranking-header').insertAdjacentHTML('beforeend', dateInfo)
@@ -140,22 +150,37 @@
       // the value to display from the entry.
       // It returns the entire row between <tr> tags.
       function createRow(i, data, value_func) {
-        const rankentry = '<td>' + (i + 1) + '</td>'
+        const rankEntry = '<td>' + (i + 1) + '</td>'
         const entry = data[i]
         const id = entry['id']
         let name = entry['name']
 
         // Check if the user was deleted.
-        let font_class = ''
+        let fontClass = ''
         if (name == 'gelöschter User') {
-          font_class = 'class="table-danger"'
+          fontClass = 'class="table-danger"'
           if (id in deleted) name = deleted[id]
         }
 
-        const nameentry = '<td style="word-break: break-word">' + name + '</td>'
-        const valueentry = '<td>' + value_func(entry) + '</td>'
+        // Create the name entry with aliases.
+        const nameEntry = document.createElement('td')
+        nameEntry.style.wordBreak = 'break-word'
+        const summary = document.createElement('summary')
+        summary.style.listStyle = 'none'
+        summary.textContent = name
+        const content = document.createElement('div')
+        content.style.fontStyle = 'italic'
+        content.style.fontSize = "small"
+        for (const alias of aliasIndex[name] || []) {
+          content.append(alias, document.createElement('br'))
+        }
+        const details = document.createElement('details')
+        details.append(summary, content)
+        nameEntry.append(details)
 
-        return '<tr ' + font_class + '>' + rankentry + nameentry + valueentry + '</tr>'
+        const valueEntry = '<td>' + value_func(entry) + '</td>'
+
+        return '<tr ' + fontClass + '>' + rankEntry + nameEntry.outerHTML + valueEntry + '</tr>'
       }
 
       // Create sorted rankings.
