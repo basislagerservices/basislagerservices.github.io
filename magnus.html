@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="de">
   <head>
     <meta charset="utf-8" />
@@ -59,38 +59,23 @@
     <div class="container">
       <div class="row" id="postings"></div>
     </div>
-    <script
-      crossorigin="anonymous"
-      integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
-      src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
-    ></script>
-    <script
-      crossorigin="anonymous"
-      integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo="
-      src="https://code.jquery.com/jquery-3.7.1.min.js"
-    ></script>
     <script type="module">
-      import * as utils from './js/utils.js'
-      import * as P from './js/posting.js'
+      import * as P from './js/postle/posting.js'
 
-      $(function () {
-        var update_path = 'https://raw.githubusercontent.com/basislagerservices/data/main/magnus/updates.json'
-        let updatePromise = $.getJSON(update_path)
-        $.when(updatePromise).then(function (update_data) {
-          $.each(update_data, function (i) {
-            var postings = document.getElementById('postings')
-            var div = document.createElement('div')
-            postings.appendChild(div)
-            P.renderPosting(div, {
-              username: 'danielf',
-              title: update_data[i]['title'],
-              message: update_data[i]['message'],
-              published: update_data[i]['timestamp'],
-              href: P.createTickerLink(update_data[i]['ticker'], update_data[i]['thread'], update_data[i]['posting']),
-            })
-          })
+      const updatePath = 'https://raw.githubusercontent.com/basislagerservices/data/main/magnus/updates.json'
+      const updates = await (await fetch(updatePath)).json()
+      const postings = document.getElementById('postings')
+      for (const entry of updates) {
+        const div = document.createElement('div')
+        postings.appendChild(div)
+        P.renderPosting(div, {
+          username: 'danielf',
+          title: entry['title'],
+          message: entry['message'],
+          published: entry['timestamp'],
+          href: P.createTickerLink(entry['ticker'], entry['thread'], entry['posting']),
         })
-      })
+      }
     </script>
   </body>
 </html>
