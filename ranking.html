@@ -170,10 +170,15 @@
         summary.textContent = name
         const content = document.createElement('div')
         content.style.fontStyle = 'italic'
-        content.style.fontSize = "small"
-        for (const alias of aliasIndex[name] || []) {
-          content.append(alias, document.createElement('br'))
+        content.style.fontSize = 'small'
+        if (aliasIndex[name]) {
+          for (const alias of aliasIndex[name]) {
+            content.append(alias, document.createElement('br'))
+          }
+        } else {
+          summary.style.cursor = 'default'
         }
+
         const details = document.createElement('details')
         details.append(summary, content)
         nameEntry.append(details)
