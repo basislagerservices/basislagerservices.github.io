@@ -46,9 +46,10 @@
       let jumpEmoji = '🌷'
       let initThreads = 2
       let initPostings = 300
+      let timeoutWindow = 3600
 
       // Maximum values
-      const MAX_INIT_THREADS = 20
+      const MAX_INIT_THREADS = 100
       const MAX_INIT_POSTINGS = 1000
 
       let urlParams = new URLSearchParams(document.location.search)
@@ -57,12 +58,12 @@
       if (urlParams.get('initthreads')) {
         initThreads = parseInt(urlParams.get('initthreads')) || initThreads
         initThreads = Math.min(initThreads, MAX_INIT_THREADS)
-        console.log(initThreads)
       }
       if (urlParams.get('initpostings')) {
         initPostings = parseInt(urlParams.get('initpostings')) || initPostings
         initPostings = Math.min(initPostings, MAX_INIT_POSTINGS)
       }
+      if (urlParams.get('timeout')) timeoutWindow = parseInt(urlParams.get('timeout')) || timeout
 
       const CORS_PROXY = isDebugSession() ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
       const canvas = document.getElementById('aquarium')
@@ -74,7 +75,7 @@
         //new SnowLayer(canvas, 30),
         new BubbleLayer(canvas, 30),
         new JumpEmojiLayer(canvas, jumpEmoji),
-        new FishLayer(canvas, 3600 * 1000),
+        new FishLayer(canvas, timeoutWindow * 1000),
       ]
       let aquarium = new TickerAnimation(canvas, tickerId, layers, {
         corsProxy: CORS_PROXY,
