@@ -162,10 +162,14 @@
         let name = entry['name']
 
         // Check if the user was deleted.
+
         let fontClass = ''
         if (name == 'gelöschter User') {
           fontClass = 'class="table-danger"'
-          if (id in deleted) name = deleted[id]
+        }
+        if (id in deleted) {
+          name = deleted[id]
+          fontClass = 'class="table-danger"'
         }
 
         // Create the name entry with aliases.
