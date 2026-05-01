@@ -15,8 +15,8 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Ticker } from './ticker.js'
-import { createSessionId, Logging } from './utils.js'
+import { Ticker } from '../common/ticker.js'
+import { createSessionId, Logging } from '../common/utils.js'
 
 /**
  * Class to encapsulate animation and ticker connection logic.

@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { randomElement } from './utils.js'
+import { randomElement } from '../common/utils.js'
 import { Layer } from './layer.js'
 
 // prettier-ignore

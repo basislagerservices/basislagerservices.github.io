@@ -15,7 +15,7 @@
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-import { Logging } from './utils.js'
+import { Logging } from '../common/utils.js'
 
 /**
  * Base class for animation layers.
