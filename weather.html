@@ -37,6 +37,31 @@
         height: 100%;
         width: 100%;
       }
+      #controls {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1000;
+        background: rgba(33, 37, 41, 0.85);
+        border-radius: 8px;
+        padding: 6px 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      #controls .btn-outline-light {
+        --bs-btn-color: #adb5bd;
+        --bs-btn-border-color: #495057;
+        --bs-btn-hover-bg: #495057;
+        --bs-btn-active-bg: #198754;
+        --bs-btn-active-border-color: #198754;
+      }
+      #controls .btn-check:checked + .btn-outline-light {
+        background-color: #198754;
+        border-color: #198754;
+        color: #fff;
+      }
     </style>
   </head>
 
@@ -77,7 +102,17 @@
         </div>
       </div>
     </nav>
-    <div id="map"></div>
+    <div id="map">
+      <div id="controls">
+        <div class="d-flex gap-1">
+          <input type="checkbox" class="btn-check" id="source-at" autocomplete="off" />
+          <label class="btn btn-sm btn-outline-light" for="source-at">Österreich</label>
+          <input type="checkbox" class="btn-check" id="source-de" autocomplete="off" />
+          <label class="btn btn-sm btn-outline-light" for="source-de">Deutschland</label>
+        </div>
+        <button id="refresh-btn" class="btn btn-sm btn-outline-light">&#x21bb;</button>
+      </div>
+    </div>
 
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -254,19 +289,46 @@
         return stationData
       }
 
-      try {
-        const geosphereData = await fetchGeosphere()
-        createMarkers(geosphereData)
-      } catch (error) {
-        console.error('Failed to load Geosphere data:', error)
+      const savedSources = JSON.parse(localStorage.getItem('weatherSources'))
+      const sources = savedSources || { at: true, de: false }
+      document.getElementById('source-at').checked = sources.at
+      document.getElementById('source-de').checked = sources.de
+
+      document.getElementById('source-at').addEventListener('change', () => {
+        sources.at = document.getElementById('source-at').checked
+        localStorage.setItem('weatherSources', JSON.stringify(sources))
+      })
+      document.getElementById('source-de').addEventListener('change', () => {
+        sources.de = document.getElementById('source-de').checked
+        localStorage.setItem('weatherSources', JSON.stringify(sources))
+      })
+
+      async function refreshData() {
+        markers.clearLayers()
+        map.removeLayer(markers)
+
+        if (sources.at) {
+          try {
+            const geosphereData = await fetchGeosphere()
+            createMarkers(geosphereData)
+          } catch (error) {
+            console.error('Failed to load Geosphere data:', error)
+          }
+        }
+
+        if (sources.de) {
+          try {
+            const dwdData = await fetchDwd()
+            createMarkers(dwdData)
+          } catch (error) {
+            console.error('Failed to load DWD data:', error)
+          }
+        }
       }
 
-      try {
-        const dwdData = await fetchDwd()
-        createMarkers(dwdData)
-      } catch (error) {
-        console.error('Failed to load DWD data:', error)
-      }
+      document.getElementById('refresh-btn').addEventListener('click', refreshData)
+
+      refreshData()
     </script>
   </body>
 </html>
