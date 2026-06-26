@@ -85,10 +85,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script type="module">
-      import { isDebugSession } from './js/common/utils.js'
+      import { isDebugSession, createSessionId } from './js/common/utils.js'
 
       // DWD enforces CORS for some reason nobody understands.
       const CORS_PROXY = isDebugSession() ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
+      const SESSION_ID = createSessionId()
 
       // Restore a saved view or create a new map.
       const savedView = JSON.parse(localStorage.getItem('mapView'))
@@ -188,7 +189,7 @@
         const stationData = {}
 
         const descUrl = CORS_PROXY + 'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/zehn_now_tu_Beschreibung_Stationen.txt'
-        const descResponse = await fetch(descUrl)
+        const descResponse = await fetch(descUrl, { headers: { 'Session-ID': SESSION_ID } })
         if (!descResponse.ok) throw new Error('connection error')
         const descBuffer = await descResponse.arrayBuffer()
         const descText = new TextDecoder('iso-8859-1').decode(descBuffer)
@@ -213,14 +214,14 @@
         }
 
         const baseUrl = CORS_PROXY + 'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/'
-        const BATCH_SIZE = 12
+        const BATCH_SIZE = 128
 
         for (let i = 0; i < stations.length; i += BATCH_SIZE) {
           const batch = stations.slice(i, i + BATCH_SIZE)
           await Promise.allSettled(
             batch.map(async (station) => {
               try {
-                const response = await fetch(`${baseUrl}10minutenwerte_TU_${station.id}_now.zip`)
+                const response = await fetch(`${baseUrl}10minutenwerte_TU_${station.id}_now.zip`, { headers: { 'Session-ID': SESSION_ID } })
                 if (!response.ok) return
                 const blob = await response.blob()
                 const zip = await window.JSZip.loadAsync(blob)
