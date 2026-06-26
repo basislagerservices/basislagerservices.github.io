@@ -82,8 +82,14 @@
     <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
     <script type="module">
+      import { isDebugSession } from './js/common/utils.js'
+
+      // DWD enforces CORS for some reason nobody understands.
+      const CORS_PROXY = isDebugSession() ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
+
       // Restore a saved view or create a new map.
       const savedView = JSON.parse(localStorage.getItem('mapView'))
       const map = L.map('map').setView(
@@ -165,7 +171,7 @@
         return stationData
       }
 
-      function markGeosphere(stationData) {
+      function createMarkers(stationData) {
         for (const station of Object.values(stationData)) {
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
             `
@@ -178,11 +184,86 @@
         map.addLayer(markers)
       }
 
+      async function fetchDwd() {
+        const stationData = {}
+
+        const descUrl = CORS_PROXY + 'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/zehn_now_tu_Beschreibung_Stationen.txt'
+        const descResponse = await fetch(descUrl)
+        if (!descResponse.ok) throw new Error('connection error')
+        const descText = await descResponse.text()
+
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+        const lines = descText.split('\n').slice(2)
+        const stations = []
+
+        for (const line of lines) {
+          if (line.trim() === '') continue
+          const match = line.match(/^(\d{5})\s+(\d{8})\s+(\d{8})\s+(-?\d+)\s+([\d.]+)\s+([\d.]+)\s+(.+?)\s{2,}(.+?)\s+Frei/)
+          if (!match) continue
+          const [, id, , bisDatum, altitude, lat, lon, name] = match
+          if (bisDatum < today) continue
+          stations.push({
+            id,
+            name: name.trim(),
+            altitude: parseInt(altitude, 10),
+            lat: parseFloat(lat),
+            lon: parseFloat(lon),
+          })
+        }
+
+        const baseUrl = CORS_PROXY + 'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/'
+        const BATCH_SIZE = 12
+
+        for (let i = 0; i < stations.length; i += BATCH_SIZE) {
+          const batch = stations.slice(i, i + BATCH_SIZE)
+          await Promise.allSettled(
+            batch.map(async (station) => {
+              try {
+                const response = await fetch(`${baseUrl}10minutenwerte_TU_${station.id}_now.zip`)
+                if (!response.ok) return
+                const blob = await response.blob()
+                const zip = await window.JSZip.loadAsync(blob)
+                const filenames = Object.keys(zip.files).filter((f) => !f.startsWith('__MACOSX'))
+                if (filenames.length === 0) return
+                const content = await zip.file(filenames[0]).async('string')
+                const dataLines = content.split('\n').slice(1)
+                for (let j = dataLines.length - 1; j >= 0; j--) {
+                  const parts = dataLines[j].split(';')
+                  if (parts.length < 6) continue
+                  const temp = parseFloat(parts[4].trim())
+                  if (!isNaN(temp) && temp !== -999) {
+                    stationData[station.id] = {
+                      name: station.name,
+                      altitude: station.altitude,
+                      lat: station.lat,
+                      lon: station.lon,
+                      temperature: temp,
+                    }
+                    return
+                  }
+                }
+              } catch {
+                // Skip failed stations
+              }
+            })
+          )
+        }
+
+        return stationData
+      }
+
       try {
-        const stationData = await fetchGeosphere()
-        markGeosphere(stationData)
+        const geosphereData = await fetchGeosphere()
+        createMarkers(geosphereData)
       } catch (error) {
-        console.error('Failed to load weather data:', error)
+        console.error('Failed to load Geosphere data:', error)
+      }
+
+      try {
+        const dwdData = await fetchDwd()
+        createMarkers(dwdData)
+      } catch (error) {
+        console.error('Failed to load DWD data:', error)
       }
     </script>
   </body>
