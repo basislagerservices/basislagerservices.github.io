@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -63,8 +63,12 @@
         color: #fff;
       }
       @keyframes spin {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
       #refresh-btn.spinning {
         animation: spin 1s linear infinite;
@@ -175,7 +179,9 @@
       async function fetchAustria() {
         const stationData = {}
 
-        const metadataResponse = await fetch('https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min/metadata')
+        const metadataResponse = await fetch(
+          'https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min/metadata'
+        )
         if (!metadataResponse.ok) throw new Error('connection error')
         const metadata = await metadataResponse.json()
 
@@ -305,7 +311,9 @@
       async function fetchGermany() {
         const stationData = {}
 
-        const descUrl = CORS_PROXY + 'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/zehn_now_tu_Beschreibung_Stationen.txt'
+        const descUrl =
+          CORS_PROXY +
+          'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/zehn_now_tu_Beschreibung_Stationen.txt'
         const descResponse = await fetch(descUrl, { headers: { 'Session-ID': SESSION_ID } })
         if (!descResponse.ok) throw new Error('connection error')
         const descBuffer = await descResponse.arrayBuffer()
@@ -317,7 +325,9 @@
 
         for (const line of lines) {
           if (line.trim() === '') continue
-          const match = line.match(/^(\d{5})\s+(\d{8})\s+(\d{8})\s+(-?\d+)\s+([\d.]+)\s+([\d.]+)\s+(.+?)\s{2,}(.+?)\s+Frei/)
+          const match = line.match(
+            /^(\d{5})\s+(\d{8})\s+(\d{8})\s+(-?\d+)\s+([\d.]+)\s+([\d.]+)\s+(.+?)\s{2,}(.+?)\s+Frei/
+          )
           if (!match) continue
           const [, id, , bisDatum, altitude, lat, lon, name] = match
           if (bisDatum < today) continue
@@ -330,7 +340,9 @@
           })
         }
 
-        const baseUrl = CORS_PROXY + 'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/'
+        const baseUrl =
+          CORS_PROXY +
+          'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/'
         const BATCH_SIZE = 128
 
         for (let i = 0; i < stations.length; i += BATCH_SIZE) {
@@ -338,7 +350,9 @@
           await Promise.allSettled(
             batch.map(async (station) => {
               try {
-                const response = await fetch(`${baseUrl}10minutenwerte_TU_${station.id}_now.zip`, { headers: { 'Session-ID': SESSION_ID } })
+                const response = await fetch(`${baseUrl}10minutenwerte_TU_${station.id}_now.zip`, {
+                  headers: { 'Session-ID': SESSION_ID },
+                })
                 if (!response.ok) return
                 const blob = await response.blob()
                 const zip = await window.JSZip.loadAsync(blob)
