@@ -417,21 +417,21 @@
           }
         }
 
-        if (sources.de) {
-          try {
-            const dwdData = await fetchGermany()
-            createMarkers(dwdData)
-          } catch (error) {
-            console.error('Failed to load DWD data:', error)
-          }
-        }
-
         if (sources.ch) {
           try {
             const chData = await fetchSwitzerland()
             createMarkers(chData)
           } catch (error) {
             console.error('Failed to load Switzerland data:', error)
+          }
+        }
+
+        if (sources.de) {
+          try {
+            const dwdData = await fetchGermany()
+            createMarkers(dwdData)
+          } catch (error) {
+            console.error('Failed to load DWD data:', error)
           }
         }
       }
