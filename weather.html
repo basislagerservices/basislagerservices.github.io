@@ -116,6 +116,8 @@
           <label class="btn btn-sm btn-outline-light" for="source-at">Österreich</label>
           <input type="checkbox" class="btn-check" id="source-de" autocomplete="off" />
           <label class="btn btn-sm btn-outline-light" for="source-de">Deutschland</label>
+          <input type="checkbox" class="btn-check" id="source-ch" autocomplete="off" />
+          <label class="btn btn-sm btn-outline-light" for="source-ch">Schweiz</label>
         </div>
         <button id="refresh-btn" class="btn btn-sm btn-outline-light">&#x21bb;</button>
       </div>
@@ -170,7 +172,7 @@
         },
       })
 
-      async function fetchGeosphere() {
+      async function fetchAustria() {
         const stationData = {}
 
         const metadataResponse = await fetch('https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min/metadata')
@@ -214,6 +216,79 @@
         return stationData
       }
 
+      async function fetchSwitzerland() {
+        const stationData = {}
+
+        const metaUrl = 'https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/ogd-smn_meta_stations.csv'
+        const metaResponse = await fetch(metaUrl)
+        if (!metaResponse.ok) throw new Error('connection error')
+        const metaBuffer = await metaResponse.arrayBuffer()
+        const metaText = new TextDecoder('iso-8859-1').decode(metaBuffer)
+
+        const metaLines = metaText.split('\n')
+        const headers = metaLines[0].split(';')
+        const abbrIdx = headers.indexOf('station_abbr')
+        const nameIdx = headers.indexOf('station_name')
+        const altIdx = headers.indexOf('station_height_masl')
+        const latIdx = headers.indexOf('station_coordinates_wgs84_lat')
+        const lonIdx = headers.indexOf('station_coordinates_wgs84_lon')
+
+        const stations = []
+        for (let i = 1; i < metaLines.length; i++) {
+          const line = metaLines[i].trim()
+          if (!line) continue
+          const cols = line.split(';')
+          stations.push({
+            abbr: cols[abbrIdx],
+            name: cols[nameIdx],
+            altitude: parseFloat(cols[altIdx]) || null,
+            lat: parseFloat(cols[latIdx]),
+            lon: parseFloat(cols[lonIdx]),
+          })
+        }
+
+        const baseUrl = 'https://data.geo.admin.ch/ch.meteoschweiz.ogd-smn/'
+        const BATCH_SIZE = 64
+
+        for (let i = 0; i < stations.length; i += BATCH_SIZE) {
+          const batch = stations.slice(i, i + BATCH_SIZE)
+          await Promise.allSettled(
+            batch.map(async (station) => {
+              try {
+                const abbrLower = station.abbr.toLowerCase()
+                const url = `${baseUrl}${abbrLower}/ogd-smn_${abbrLower}_t_now.csv`
+                const response = await fetch(url)
+                if (!response.ok) return
+                const text = await response.text()
+                const lines = text.split('\n')
+                const dataHeaders = lines[0].split(';')
+                const tempIdx = dataHeaders.indexOf('tre200s0')
+                if (tempIdx < 0) return
+                for (let j = lines.length - 1; j >= 1; j--) {
+                  const cols = lines[j].split(';')
+                  if (cols.length <= tempIdx) continue
+                  const temp = parseFloat(cols[tempIdx].trim())
+                  if (!isNaN(temp)) {
+                    stationData[station.abbr] = {
+                      name: station.name,
+                      altitude: station.altitude,
+                      lat: station.lat,
+                      lon: station.lon,
+                      temperature: temp,
+                    }
+                    return
+                  }
+                }
+              } catch {
+                // Skip failed stations
+              }
+            })
+          )
+        }
+
+        return stationData
+      }
+
       function createMarkers(stationData) {
         for (const station of Object.values(stationData)) {
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
@@ -227,7 +302,7 @@
         map.addLayer(markers)
       }
 
-      async function fetchDwd() {
+      async function fetchGermany() {
         const stationData = {}
 
         const descUrl = CORS_PROXY + 'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/air_temperature/now/zehn_now_tu_Beschreibung_Stationen.txt'
@@ -297,9 +372,10 @@
       }
 
       const savedSources = JSON.parse(localStorage.getItem('weatherSources'))
-      const sources = savedSources || { at: true, de: false }
+      const sources = savedSources || { at: true, de: false, ch: false }
       document.getElementById('source-at').checked = sources.at
       document.getElementById('source-de').checked = sources.de
+      document.getElementById('source-ch').checked = sources.ch
 
       document.getElementById('source-at').addEventListener('change', () => {
         sources.at = document.getElementById('source-at').checked
@@ -309,6 +385,10 @@
         sources.de = document.getElementById('source-de').checked
         localStorage.setItem('weatherSources', JSON.stringify(sources))
       })
+      document.getElementById('source-ch').addEventListener('change', () => {
+        sources.ch = document.getElementById('source-ch').checked
+        localStorage.setItem('weatherSources', JSON.stringify(sources))
+      })
 
       async function refreshData() {
         markers.clearLayers()
@@ -316,7 +396,7 @@
 
         if (sources.at) {
           try {
-            const geosphereData = await fetchGeosphere()
+            const geosphereData = await fetchAustria()
             createMarkers(geosphereData)
           } catch (error) {
             console.error('Failed to load Geosphere data:', error)
@@ -325,10 +405,19 @@
 
         if (sources.de) {
           try {
-            const dwdData = await fetchDwd()
+            const dwdData = await fetchGermany()
             createMarkers(dwdData)
           } catch (error) {
             console.error('Failed to load DWD data:', error)
+          }
+        }
+
+        if (sources.ch) {
+          try {
+            const chData = await fetchSwitzerland()
+            createMarkers(chData)
+          } catch (error) {
+            console.error('Failed to load Switzerland data:', error)
           }
         }
       }
