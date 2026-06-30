@@ -327,7 +327,7 @@
 
       async function fetchStationHistory(stationId) {
         const now = new Date()
-        const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000)
+        const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000)
         const pad = (n) => String(n).padStart(2, '0')
         const fmt = (d) =>
           `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
@@ -335,7 +335,7 @@
         const url =
           'https://dataset.api.hub.geosphere.at/v1/station/historical/tawes-v1-10min' +
           `?parameters=TLAM&station_ids=${stationId}` +
-          `&start=${fmt(oneHourAgo)}&end=${fmt(now)}` +
+          `&start=${fmt(fourHoursAgo)}&end=${fmt(now)}` +
           '&output_format=geojson'
 
         const res = await fetch(url)
@@ -459,8 +459,9 @@
       function createMarkersGermany(stationData) {
         for (const [id, station] of Object.entries(stationData)) {
           station.id = id
-          const timestamps = station.history.map((h) => h.time)
-          const values = station.history.map((h) => h.temp)
+          const last4h = station.history.slice(-24)
+          const timestamps = last4h.map((h) => h.time)
+          const values = last4h.map((h) => h.temp)
           const sparkline = renderSparkline(timestamps, values) || ''
 
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
