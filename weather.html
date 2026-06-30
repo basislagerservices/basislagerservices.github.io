@@ -449,6 +449,10 @@
 
       refreshBtn.addEventListener('click', doRefresh)
 
+      document.getElementById('controls').addEventListener('dblclick', (e) => {
+        e.stopPropagation()
+      })
+
       doRefresh()
     </script>
   </body>
