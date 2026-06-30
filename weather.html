@@ -433,19 +433,30 @@
         }
       }
 
-      function createMarkersSimple(stationData) {
-        for (const station of Object.values(stationData)) {
+      function createMarkersSwitzerland(stationData) {
+        for (const [id, station] of Object.entries(stationData)) {
+          station.id = id
+          const timestamps = station.history.map((h) => h.time)
+          const values = station.history.map((h) => h.temp)
+          const sparkline = renderSparkline(timestamps, values) || ''
+
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
             `
-              <strong>${station.name}</strong>
-              <p>${station.temperature}°C</p>
+              <div class="station-popup">
+                <h3>${station.name}</h3>
+                <span class="current">${station.temperature != null ? station.temperature.toFixed(1) + '°C' : '&mdash;'}</span>
+                ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
+                <div class="sparkline">
+                  ${sparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
+                </div>
+              </div>
             `
           )
           markers.addLayer(marker)
         }
       }
 
-      function createMarkersSwitzerland(stationData) {
+      function createMarkersGermany(stationData) {
         for (const [id, station] of Object.entries(stationData)) {
           station.id = id
           const timestamps = station.history.map((h) => h.time)
@@ -519,20 +530,29 @@
                 const filenames = Object.keys(zip.files).filter((f) => !f.startsWith('__MACOSX'))
                 if (filenames.length === 0) return
                 const content = await zip.file(filenames[0]).async('string')
-                const dataLines = content.split('\n').slice(1)
-                for (let j = dataLines.length - 1; j >= 0; j--) {
+                const dataLines = content.split('\n')
+                const tempIdx = 4
+                const tsIdx = 1
+                const history = []
+                for (let j = 1; j < dataLines.length; j++) {
                   const parts = dataLines[j].split(';')
                   if (parts.length < 6) continue
-                  const temp = parseFloat(parts[4].trim())
+                  const temp = parseFloat(parts[tempIdx].trim())
                   if (!isNaN(temp) && temp !== -999) {
-                    stationData[station.id] = {
-                      name: station.name,
-                      altitude: station.altitude,
-                      lat: station.lat,
-                      lon: station.lon,
-                      temperature: temp,
-                    }
-                    return
+                    const tsRaw = parts[tsIdx]?.trim() || ''
+                    const time =
+                      tsRaw.length >= 12 ? tsRaw.slice(8, 10) + ':' + tsRaw.slice(10, 12) : ''
+                    history.push({ time, temp })
+                  }
+                }
+                if (history.length > 0) {
+                  stationData[station.id] = {
+                    name: station.name,
+                    altitude: station.altitude,
+                    lat: station.lat,
+                    lon: station.lon,
+                    temperature: history[history.length - 1].temp,
+                    history,
                   }
                 }
               } catch {
@@ -589,7 +609,7 @@
         if (sources.de) {
           try {
             const dwdData = await fetchGermany()
-            createMarkersSimple(dwdData)
+            createMarkersGermany(dwdData)
           } catch (error) {
             console.error('Failed to load DWD data:', error)
           }
