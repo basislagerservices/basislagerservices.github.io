@@ -199,6 +199,94 @@
         },
       })
 
+      async function fetchStationHistory(stationId) {
+        const now = new Date()
+        const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000)
+        const pad = (n) => String(n).padStart(2, '0')
+        const fmt = (d) =>
+          `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
+
+        const url =
+          'https://dataset.api.hub.geosphere.at/v1/station/historical/tawes-v1-10min' +
+          `?parameters=TLAM&station_ids=${stationId}` +
+          `&start=${fmt(fourHoursAgo)}&end=${fmt(now)}` +
+          '&output_format=geojson'
+
+        const res = await fetch(url)
+        if (!res.ok) throw new Error('history fetch failed')
+        const json = await res.json()
+
+        const feature = json.features.find((f) => f.properties.station === String(stationId))
+        if (!feature) return { timestamps: [], values: [] }
+
+        const data = feature.properties.parameters.TLAM.data
+        const timestamps = json.timestamps.map((t) => {
+          const d = new Date(t)
+          return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
+        })
+
+        return { timestamps, values: data }
+      }
+
+      function renderSparkline(timestamps, values) {
+        const valid = values
+          .map((v, i) => ({ ts: timestamps[i], v }))
+          .filter((p) => p.v !== null)
+
+        if (valid.length < 2) return ''
+
+        const W = 240
+        const H = 50
+        const pad = { top: 8, right: 8, bottom: 16, left: 28 }
+        const innerW = W - pad.left - pad.right
+        const innerH = H - pad.top - pad.bottom
+
+        const vals = valid.map((p) => p.v)
+        const min = Math.min(...vals)
+        const max = Math.max(...vals)
+        const range = max - min || 1
+
+        const x = (i) => pad.left + (i / (valid.length - 1)) * innerW
+        const y = (v) => pad.top + innerH - ((v - min) / range) * innerH
+
+        const points = valid.map((p, i) => `${x(i)},${y(p.v)}`).join(' ')
+        const polyline = `<polyline points="${points}" fill="none" stroke="#ff7800" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
+
+        const yAxis = `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + innerH}" stroke="#aaa" stroke-width="1"/>`
+        const maxLabel = `<text x="${pad.left - 4}" y="${pad.top + 4}" text-anchor="end" fill="#198754" font-size="9">${max.toFixed(1)}</text>`
+        const minLabel = `<text x="${pad.left - 4}" y="${pad.top + innerH + 1}" text-anchor="end" fill="#dc3545" font-size="9">${min.toFixed(1)}</text>`
+
+        const firstTs = `<text x="${pad.left}" y="${H - 4}" text-anchor="start">${valid[0].ts}</text>`
+        const lastTs = `<text x="${W - pad.right}" y="${H - 4}" text-anchor="end">${valid[valid.length - 1].ts}</text>`
+
+        return `
+          <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+            ${yAxis}
+            ${polyline}
+            ${maxLabel}
+            ${minLabel}
+            ${firstTs}
+            ${lastTs}
+          </svg>`
+      }
+
+      function buildPopupContent(station) {
+        const name = station.name
+        const temp =
+          station.temperature != null ? `<span class="current">${station.temperature.toFixed(1)}°C</span>` : '&mdash;'
+        const altitude = station.altitude != null ? `${station.altitude}m` : ''
+
+        return `
+          <div class="station-popup">
+            <h3>${name}</h3>
+            ${temp}
+            ${altitude ? `<div style="font-size:11px;color:#888;">${altitude}</div>` : ''}
+            <div class="sparkline" id="spark-${station.id}">
+              <div style="font-size:11px;color:#aaa;padding:8px 0;">Lade Verlauf&hellip;</div>
+            </div>
+          </div>`
+      }
+
       async function fetchAustria() {
         const stationData = {}
 
@@ -243,6 +331,29 @@
         }
 
         return stationData
+      }
+
+      function createMarkersAustria(stationData) {
+        for (const [id, station] of Object.entries(stationData)) {
+          station.id = id
+          const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
+            buildPopupContent(station)
+          )
+
+          marker.on('popupopen', async () => {
+            const container = document.getElementById('spark-' + id)
+            if (!container) return
+            try {
+              const { timestamps, values } = await fetchStationHistory(id)
+              container.innerHTML =
+                renderSparkline(timestamps, values) || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'
+            } catch {
+              container.innerHTML = '<span style="font-size:11px;color:#aaa;">Fehler beim Laden</span>'
+            }
+          })
+
+          markers.addLayer(marker)
+        }
       }
 
       async function fetchSwitzerland() {
@@ -325,143 +436,11 @@
         return stationData
       }
 
-      async function fetchStationHistory(stationId) {
-        const now = new Date()
-        const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000)
-        const pad = (n) => String(n).padStart(2, '0')
-        const fmt = (d) =>
-          `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
-
-        const url =
-          'https://dataset.api.hub.geosphere.at/v1/station/historical/tawes-v1-10min' +
-          `?parameters=TLAM&station_ids=${stationId}` +
-          `&start=${fmt(fourHoursAgo)}&end=${fmt(now)}` +
-          '&output_format=geojson'
-
-        const res = await fetch(url)
-        if (!res.ok) throw new Error('history fetch failed')
-        const json = await res.json()
-
-        const feature = json.features.find((f) => f.properties.station === String(stationId))
-        if (!feature) return { timestamps: [], values: [] }
-
-        const data = feature.properties.parameters.TLAM.data
-        const timestamps = json.timestamps.map((t) => {
-          const d = new Date(t)
-          return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
-        })
-
-        return { timestamps, values: data }
-      }
-
-      function renderSparkline(timestamps, values) {
-        const valid = values
-          .map((v, i) => ({ ts: timestamps[i], v }))
-          .filter((p) => p.v !== null)
-
-        if (valid.length < 2) return ''
-
-        const W = 240
-        const H = 50
-        const pad = { top: 8, right: 8, bottom: 16, left: 8 }
-        const innerW = W - pad.left - pad.right
-        const innerH = H - pad.top - pad.bottom
-
-        const vals = valid.map((p) => p.v)
-        const min = Math.min(...vals)
-        const max = Math.max(...vals)
-        const range = max - min || 1
-
-        const x = (i) => pad.left + (i / (valid.length - 1)) * innerW
-        const y = (v) => pad.top + innerH - ((v - min) / range) * innerH
-
-        const points = valid.map((p, i) => `${x(i)},${y(p.v)}`).join(' ')
-        const polyline = `<polyline points="${points}" fill="none" stroke="#ff7800" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
-
-        const last = valid[valid.length - 1]
-        const lastLabel = `<text x="${W - pad.right}" y="${pad.top - 1}" text-anchor="end" fill="#ff7800" font-weight="bold">${last.v.toFixed(1)}°</text>`
-
-        const firstTs = `<text x="${pad.left}" y="${H - 4}" text-anchor="start">${valid[0].ts}</text>`
-        const lastTs = `<text x="${W - pad.right}" y="${H - 4}" text-anchor="end">${valid[valid.length - 1].ts}</text>`
-
-        return `
-          <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
-            ${polyline}
-            ${lastLabel}
-            ${firstTs}
-            ${lastTs}
-          </svg>`
-      }
-
-      function buildPopupContent(station) {
-        const name = station.name
-        const temp =
-          station.temperature != null ? `<span class="current">${station.temperature.toFixed(1)}°C</span>` : '&mdash;'
-        const altitude = station.altitude != null ? `${station.altitude}m` : ''
-
-        return `
-          <div class="station-popup">
-            <h3>${name}</h3>
-            ${temp}
-            ${altitude ? `<div style="font-size:11px;color:#888;">${altitude}</div>` : ''}
-            <div class="sparkline" id="spark-${station.id}">
-              <div style="font-size:11px;color:#aaa;padding:8px 0;">Lade Verlauf&hellip;</div>
-            </div>
-          </div>`
-      }
-
-      function createMarkersAustria(stationData) {
-        for (const [id, station] of Object.entries(stationData)) {
-          station.id = id
-          const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
-            buildPopupContent(station)
-          )
-
-          marker.on('popupopen', async () => {
-            const container = document.getElementById('spark-' + id)
-            if (!container) return
-            try {
-              const { timestamps, values } = await fetchStationHistory(id)
-              container.innerHTML =
-                renderSparkline(timestamps, values) || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'
-            } catch {
-              container.innerHTML = '<span style="font-size:11px;color:#aaa;">Fehler beim Laden</span>'
-            }
-          })
-
-          markers.addLayer(marker)
-        }
-      }
-
       function createMarkersSwitzerland(stationData) {
         for (const [id, station] of Object.entries(stationData)) {
           station.id = id
           const timestamps = station.history.map((h) => h.time)
           const values = station.history.map((h) => h.temp)
-          const sparkline = renderSparkline(timestamps, values) || ''
-
-          const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
-            `
-              <div class="station-popup">
-                <h3>${station.name}</h3>
-                <span class="current">${station.temperature != null ? station.temperature.toFixed(1) + '°C' : '&mdash;'}</span>
-                ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
-                <div class="sparkline">
-                  ${sparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
-                </div>
-              </div>
-            `
-          )
-          markers.addLayer(marker)
-        }
-      }
-
-      function createMarkersGermany(stationData) {
-        for (const [id, station] of Object.entries(stationData)) {
-          station.id = id
-          const last4h = station.history.slice(-24)
-          const timestamps = last4h.map((h) => h.time)
-          const values = last4h.map((h) => h.temp)
           const sparkline = renderSparkline(timestamps, values) || ''
 
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
@@ -564,6 +543,30 @@
         }
 
         return stationData
+      }
+
+      function createMarkersGermany(stationData) {
+        for (const [id, station] of Object.entries(stationData)) {
+          station.id = id
+          const last4h = station.history.slice(-24)
+          const timestamps = last4h.map((h) => h.time)
+          const values = last4h.map((h) => h.temp)
+          const sparkline = renderSparkline(timestamps, values) || ''
+
+          const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
+            `
+              <div class="station-popup">
+                <h3>${station.name}</h3>
+                <span class="current">${station.temperature != null ? station.temperature.toFixed(1) + '°C' : '&mdash;'}</span>
+                ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
+                <div class="sparkline">
+                  ${sparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
+                </div>
+              </div>
+            `
+          )
+          markers.addLayer(marker)
+        }
       }
 
       const savedSources = JSON.parse(localStorage.getItem('weatherSources'))

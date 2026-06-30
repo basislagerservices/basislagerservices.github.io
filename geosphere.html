@@ -207,7 +207,7 @@
 
         const W = 240
         const H = 50
-        const pad = { top: 8, right: 8, bottom: 16, left: 8 }
+        const pad = { top: 8, right: 8, bottom: 16, left: 28 }
         const innerW = W - pad.left - pad.right
         const innerH = H - pad.top - pad.bottom
 
@@ -222,16 +222,19 @@
         const points = valid.map((p, i) => `${x(i)},${y(p.v)}`).join(' ')
         const polyline = `<polyline points="${points}" fill="none" stroke="#ff7800" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`
 
-        const last = valid[valid.length - 1]
-        const lastLabel = `<text x="${W - pad.right}" y="${pad.top - 1}" text-anchor="end" fill="#ff7800" font-weight="bold">${last.v.toFixed(1)}°</text>`
+        const yAxis = `<line x1="${pad.left}" y1="${pad.top}" x2="${pad.left}" y2="${pad.top + innerH}" stroke="#aaa" stroke-width="1"/>`
+        const maxLabel = `<text x="${pad.left - 4}" y="${pad.top + 4}" text-anchor="end" fill="#198754" font-size="9">${max.toFixed(1)}</text>`
+        const minLabel = `<text x="${pad.left - 4}" y="${pad.top + innerH + 1}" text-anchor="end" fill="#dc3545" font-size="9">${min.toFixed(1)}</text>`
 
         const firstTs = `<text x="${pad.left}" y="${H - 4}" text-anchor="start">${valid[0].ts}</text>`
         const lastTs = `<text x="${W - pad.right}" y="${H - 4}" text-anchor="end">${valid[valid.length - 1].ts}</text>`
 
         return `
           <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+            ${yAxis}
             ${polyline}
-            ${lastLabel}
+            ${maxLabel}
+            ${minLabel}
             ${firstTs}
             ${lastTs}
           </svg>`
