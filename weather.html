@@ -293,19 +293,26 @@
                 const dataHeaders = lines[0].split(';')
                 const tempIdx = dataHeaders.indexOf('tre200s0')
                 if (tempIdx < 0) return
-                for (let j = lines.length - 1; j >= 1; j--) {
+                const tsIdx = 1
+                const history = []
+                for (let j = 1; j < lines.length; j++) {
                   const cols = lines[j].split(';')
                   if (cols.length <= tempIdx) continue
                   const temp = parseFloat(cols[tempIdx].trim())
                   if (!isNaN(temp)) {
-                    stationData[station.abbr] = {
-                      name: station.name,
-                      altitude: station.altitude,
-                      lat: station.lat,
-                      lon: station.lon,
-                      temperature: temp,
-                    }
-                    return
+                    const tsParts = cols[tsIdx]?.trim().split(' ')
+                    const time = tsParts && tsParts[1] ? tsParts[1] : ''
+                    history.push({ time, temp })
+                  }
+                }
+                if (history.length > 0) {
+                  stationData[station.abbr] = {
+                    name: station.name,
+                    altitude: station.altitude,
+                    lat: station.lat,
+                    lon: station.lon,
+                    temperature: history[history.length - 1].temp,
+                    history,
                   }
                 }
               } catch {
@@ -438,6 +445,29 @@
         }
       }
 
+      function createMarkersSwitzerland(stationData) {
+        for (const [id, station] of Object.entries(stationData)) {
+          station.id = id
+          const timestamps = station.history.map((h) => h.time)
+          const values = station.history.map((h) => h.temp)
+          const sparkline = renderSparkline(timestamps, values) || ''
+
+          const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
+            `
+              <div class="station-popup">
+                <h3>${station.name}</h3>
+                <span class="current">${station.temperature != null ? station.temperature.toFixed(1) + '°C' : '&mdash;'}</span>
+                ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
+                <div class="sparkline">
+                  ${sparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
+                </div>
+              </div>
+            `
+          )
+          markers.addLayer(marker)
+        }
+      }
+
       async function fetchGermany() {
         const stationData = {}
 
@@ -550,7 +580,7 @@
         if (sources.ch) {
           try {
             const chData = await fetchSwitzerland()
-            createMarkersSimple(chData)
+            createMarkersSwitzerland(chData)
           } catch (error) {
             console.error('Failed to load Switzerland data:', error)
           }
