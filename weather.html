@@ -596,15 +596,17 @@
         for (const [id, station] of Object.entries(stationData)) {
           station.id = id
           const cId = 'spark-ch-' + id
-          const timestamps = station.history.map((h) => h.time)
-          const values = station.history.map((h) => h.temp)
+          const last4h = station.history.slice(-24)
+          const timestamps = last4h.map((h) => h.time)
+          const values = last4h.map((h) => h.temp)
           const sparkline = renderSparkline(cId, timestamps, values) || ''
 
           let precipHtml = ''
           if (station.precipHistory && station.precipHistory.length > 0) {
             const pId = 'spark-prec-ch-' + id
-            const pTimestamps = station.precipHistory.map((h) => h.time)
-            const pValues = station.precipHistory.map((h) => h.precip)
+            const pLast4h = station.precipHistory.slice(-24)
+            const pTimestamps = pLast4h.map((h) => h.time)
+            const pValues = pLast4h.map((h) => h.precip)
             const pSparkline =
               pTimestamps.length >= 2
                 ? renderPrecipSparkline(pId, pTimestamps, pValues)
