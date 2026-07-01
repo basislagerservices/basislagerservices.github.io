@@ -156,6 +156,12 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+        overflow: hidden;
+      }
+      .search-result-item span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
       }
       .search-result-item:hover,
       .search-result-item.active {
@@ -167,6 +173,14 @@
         color: #6c757d;
         flex-shrink: 0;
         margin-left: 8px;
+      }
+      .search-result-separator {
+        padding: 2px 8px;
+        font-size: 10px;
+        color: #6c757d;
+        border-top: 1px solid #495057;
+        margin-top: 2px;
+        cursor: default;
       }
     </style>
   </head>
@@ -255,53 +269,143 @@
       L.DomEvent.disableClickPropagation(searchResults)
       L.DomEvent.disableScrollPropagation(searchResults)
       let searchActiveIndex = -1
+      let locationDebounceTimer = null
+      let currentLocations = []
+      let currentStations = []
+
+      function buildStationItem(s, idx) {
+        const div = document.createElement('div')
+        div.className = 'search-result-item'
+        div.dataset.type = 'station'
+        div.dataset.idx = idx
+        div.innerHTML = `<span>${s.name}</span><span class="source-tag">${s.source}</span>`
+        div.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+          selectStation(s)
+        })
+        div.addEventListener('mouseenter', () => {
+          searchActiveIndex = idx
+          updateHighlight()
+        })
+        return div
+      }
+
+      function buildLocationItem(loc, idx) {
+        const div = document.createElement('div')
+        div.className = 'search-result-item'
+        div.dataset.type = 'location'
+        div.dataset.idx = idx
+        div.innerHTML = `<span>&#x1f4cd; ${loc.display_name}</span>`
+        div.addEventListener('mousedown', (e) => {
+          e.preventDefault()
+          selectLocation(loc)
+        })
+        div.addEventListener('mouseenter', () => {
+          searchActiveIndex = idx
+          updateHighlight()
+        })
+        return div
+      }
+
+      function buildSeparator() {
+        const div = document.createElement('div')
+        div.className = 'search-result-separator'
+        div.textContent = 'Orte'
+        div.dataset.type = 'separator'
+        return div
+      }
+
+      function updateHighlight() {
+        const items = searchResults.querySelectorAll('.search-result-item')
+        items.forEach((item) => {
+          const idx = parseInt(item.dataset.idx)
+          item.classList.toggle('active', idx === searchActiveIndex)
+        })
+      }
+
+      function selectLocation(loc) {
+        searchInput.value = ''
+        searchResults.replaceChildren()
+        searchInput.blur()
+        if (locationDebounceTimer) clearTimeout(locationDebounceTimer)
+        map.setView([parseFloat(loc.lat), parseFloat(loc.lon)], 12)
+      }
+
+      function renderSearchResults(stations, locations) {
+        currentStations = stations
+        currentLocations = locations
+        searchActiveIndex = -1
+        const fragment = document.createDocumentFragment()
+        let flatIdx = 0
+
+        stations.forEach((s) => {
+          const div = buildStationItem(s, flatIdx++)
+          fragment.appendChild(div)
+        })
+
+        if (locations.length > 0) {
+          fragment.appendChild(buildSeparator())
+          locations.forEach((loc) => {
+            const div = buildLocationItem(loc, flatIdx++)
+            fragment.appendChild(div)
+          })
+        }
+
+        if (stations.length === 0 && locations.length === 0) {
+          const div = document.createElement('div')
+          div.className = 'search-result-item'
+          div.style.cursor = 'default'
+          div.style.color = '#6c757d'
+          div.textContent = 'Keine Ergebnisse'
+          fragment.appendChild(div)
+        }
+
+        searchResults.replaceChildren(fragment)
+      }
 
       function doSearch() {
-        const query = searchInput.value.trim().toLowerCase()
+        const query = searchInput.value.trim()
         if (!query) {
           searchResults.replaceChildren()
           searchActiveIndex = -1
           return
         }
-        const matches = stationLookup.filter((s) => s.name.toLowerCase().includes(query)).slice(0, 10)
-        searchActiveIndex = -1
-        const fragment = document.createDocumentFragment()
-        matches.forEach((s, idx) => {
-          const div = document.createElement('div')
-          div.className = 'search-result-item'
-          div.innerHTML = `<span>${s.name}</span><span class="source-tag">${s.source}</span>`
-          div.addEventListener('mousedown', (e) => {
-            e.preventDefault()
-            selectStation(s)
-          })
-          div.addEventListener('mouseenter', () => {
-            searchActiveIndex = idx
-            highlightActive()
-          })
-          fragment.appendChild(div)
-        })
-        if (matches.length === 0 && query) {
-          const div = document.createElement('div')
-          div.className = 'search-result-item'
-          div.style.cursor = 'default'
-          div.style.color = '#6c757d'
-          div.textContent = 'Keine Stationen gefunden'
-          fragment.appendChild(div)
-        }
-        searchResults.replaceChildren(fragment)
+        const lower = query.toLowerCase()
+        const stations = stationLookup.filter((s) => s.name.toLowerCase().includes(lower)).slice(0, 5)
+        renderSearchResults(stations, [])
+        fetchLocationsDebounced(query, stations.length)
       }
 
-      function highlightActive() {
-        const items = searchResults.querySelectorAll('.search-result-item')
-        items.forEach((item, idx) => {
-          item.classList.toggle('active', idx === searchActiveIndex)
-        })
+      function fetchLocationsDebounced(query, stationCount) {
+        if (locationDebounceTimer) clearTimeout(locationDebounceTimer)
+        locationDebounceTimer = setTimeout(() => fetchLocations(query, stationCount), 300)
+      }
+
+      async function fetchLocations(query, stationCount) {
+        try {
+          const url =
+            'https://nominatim.openstreetmap.org/search' +
+            `?q=${encodeURIComponent(query)}` +
+            '&format=json&limit=3&countrycodes=at,de,ch,li' +
+            '&accept-language=de'
+          const res = await fetch(url)
+          if (!res.ok) return
+          const locations = await res.json()
+          if (!searchInput.value.trim().toLowerCase().includes(query.toLowerCase())) return
+
+          const lower = query.toLowerCase()
+          const stations = stationLookup.filter((s) => s.name.toLowerCase().includes(lower)).slice(0, 5)
+          renderSearchResults(stations, locations)
+        } catch {
+          // ignore geocoding errors
+        }
       }
 
       function selectStation(station) {
         searchInput.value = ''
         searchResults.replaceChildren()
         searchInput.blur()
+        if (locationDebounceTimer) clearTimeout(locationDebounceTimer)
         markers.zoomToShowLayer(station.marker, () => {
           station.marker.openPopup()
         })
@@ -320,26 +424,27 @@
           e.preventDefault()
           if (items.length > 0) {
             searchActiveIndex = Math.min(searchActiveIndex + 1, items.length - 1)
-            highlightActive()
+            updateHighlight()
             items[searchActiveIndex].scrollIntoView({ block: 'nearest' })
           }
         } else if (e.key === 'ArrowUp') {
           e.preventDefault()
           if (items.length > 0) {
             searchActiveIndex = Math.max(searchActiveIndex - 1, 0)
-            highlightActive()
+            updateHighlight()
             items[searchActiveIndex].scrollIntoView({ block: 'nearest' })
           }
         } else if (e.key === 'Enter') {
           e.preventDefault()
           if (searchActiveIndex >= 0 && searchActiveIndex < items.length) {
-            const text = items[searchActiveIndex].textContent
-            if (text !== 'Keine Stationen gefunden') {
-              const query = searchInput.value.trim().toLowerCase()
-              const matches = stationLookup.filter((s) => s.name.toLowerCase().includes(query)).slice(0, 10)
-              if (matches[searchActiveIndex]) {
-                selectStation(matches[searchActiveIndex])
-              }
+            const item = items[searchActiveIndex]
+            const type = item.dataset.type
+            const idx = parseInt(item.dataset.idx)
+            if (type === 'station' && currentStations[idx]) {
+              selectStation(currentStations[idx])
+            } else if (type === 'location') {
+              const locIdx = idx - currentStations.length
+              if (currentLocations[locIdx]) selectLocation(currentLocations[locIdx])
             }
           }
         }
