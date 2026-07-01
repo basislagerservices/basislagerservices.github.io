@@ -179,6 +179,8 @@
 
       const sparklineDataMap = new Map()
 
+      const pad = (n) => String(n).padStart(2, '0')
+
       const tooltip = document.getElementById('spark-tooltip')
 
       function showSparkTooltip(e, overlay) {
@@ -263,7 +265,6 @@
       async function fetchStationHistory(stationId) {
         const now = new Date()
         const fourHoursAgo = new Date(now.getTime() - 4 * 60 * 60 * 1000)
-        const pad = (n) => String(n).padStart(2, '0')
         const fmt = (d) =>
           `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}T${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
 
@@ -284,7 +285,7 @@
         const precipData = feature.properties.parameters.RR?.data || []
         const timestamps = json.timestamps.map((t) => {
           const d = new Date(t)
-          return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`
+          return `${pad(d.getHours())}:${pad(d.getMinutes())}`
         })
 
         return { timestamps, tempValues: tempData, precipValues: precipData }
@@ -556,8 +557,25 @@
                   if (cols.length <= tempIdx) continue
                   const temp = parseFloat(cols[tempIdx].trim())
                   if (!isNaN(temp)) {
-                    const tsParts = cols[tsIdx]?.trim().split(' ')
-                    const time = tsParts && tsParts[1] ? tsParts[1] : ''
+                    const tsRaw = cols[tsIdx]?.trim() || ''
+                    let time = ''
+                    const tsParts = tsRaw.split(' ')
+                    if (tsParts.length >= 2) {
+                      const dateStr = tsParts[0]
+                      const timeParts = tsParts[1].split(':')
+                      if (dateStr.length >= 8 && timeParts.length >= 2) {
+                        const d = new Date(
+                          Date.UTC(
+                            dateStr.slice(0, 4),
+                            dateStr.slice(4, 6) - 1,
+                            dateStr.slice(6, 8),
+                            timeParts[0],
+                            timeParts[1]
+                          )
+                        )
+                        time = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+                      }
+                    }
                     history.push({ time, temp })
                     if (precipIdx >= 0) {
                       const precip = parseFloat(cols[precipIdx]?.trim())
@@ -697,8 +715,19 @@
                   const temp = parseFloat(parts[tempIdx].trim())
                   if (!isNaN(temp) && temp !== -999) {
                     const tsRaw = parts[tsIdx]?.trim() || ''
-                    const time =
-                      tsRaw.length >= 12 ? tsRaw.slice(8, 10) + ':' + tsRaw.slice(10, 12) : ''
+                    let time = ''
+                    if (tsRaw.length >= 12) {
+                      const d = new Date(
+                        Date.UTC(
+                          tsRaw.slice(0, 4),
+                          tsRaw.slice(4, 6) - 1,
+                          tsRaw.slice(6, 8),
+                          tsRaw.slice(8, 10),
+                          tsRaw.slice(10, 12)
+                        )
+                      )
+                      time = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+                    }
                     history.push({ time, temp })
                   }
                 }
