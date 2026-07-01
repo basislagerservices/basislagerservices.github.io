@@ -96,6 +96,24 @@
         font-size: 9px;
         fill: #666;
       }
+      .spark-overlay {
+        cursor: crosshair;
+      }
+      #spark-tooltip {
+        display: none;
+        position: absolute;
+        z-index: 10000;
+        pointer-events: none;
+        background: rgba(0,0,0,0.8);
+        color: #fff;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+        font-family: monospace;
+        white-space: nowrap;
+        transform: translate(-50%, -100%);
+        margin-top: -6px;
+      }
     </style>
   </head>
 
@@ -155,8 +173,49 @@
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
+    <div id="spark-tooltip"></div>
     <script type="module">
       import { isDebugSession, createSessionId } from './js/common/utils.js'
+
+      const sparklineDataMap = new Map()
+
+      const tooltip = document.getElementById('spark-tooltip')
+
+      function showSparkTooltip(e, overlay) {
+        const svg = overlay.closest('svg')
+        if (!svg) return
+        const dataId = overlay.dataset.spark
+        const data = sparklineDataMap.get(dataId)
+        if (!data || data.length < 2) return
+
+        const rect = svg.getBoundingClientRect()
+        const vb = svg.viewBox.baseVal
+        const scaleX = vb.width / rect.width
+        const svgX = (e.clientX - rect.left) * scaleX
+
+        const W = 240, padLeft = 28, padRight = 8, innerW = W - padLeft - padRight
+        let idx = Math.round(((svgX - padLeft) / innerW) * (data.length - 1))
+        idx = Math.max(0, Math.min(data.length - 1, idx))
+
+        const pt = data[idx]
+        tooltip.textContent = pt.v.toFixed(1) + ' — ' + pt.ts
+        tooltip.style.display = 'block'
+        tooltip.style.left = e.clientX + 'px'
+        tooltip.style.top = e.clientY + 'px'
+      }
+
+      function hideSparkTooltip() {
+        tooltip.style.display = 'none'
+      }
+
+      document.addEventListener('mousemove', (e) => {
+        const overlay = e.target.closest('.spark-overlay')
+        if (overlay) {
+          showSparkTooltip(e, overlay)
+        } else {
+          hideSparkTooltip()
+        }
+      })
 
       // DWD enforces CORS for some reason nobody understands.
       const CORS_PROXY = isDebugSession() ? 'http://0.0.0.0:8080/' : 'https://basislager-service.onrender.com/'
@@ -180,6 +239,8 @@
           })
         )
       })
+
+      map.on('popupclose', hideSparkTooltip)
 
       // Add OSM tile layer
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -229,12 +290,14 @@
         return { timestamps, tempValues: tempData, precipValues: precipData }
       }
 
-      function renderSparkline(timestamps, values) {
+      function renderSparkline(containerId, timestamps, values) {
         const valid = values
           .map((v, i) => ({ ts: timestamps[i], v }))
           .filter((p) => p.v !== null)
 
         if (valid.length < 2) return ''
+
+        sparklineDataMap.set(containerId, valid)
 
         const W = 240
         const H = 50
@@ -260,10 +323,13 @@
         const firstTs = `<text x="${pad.left}" y="${H - 4}" text-anchor="start">${valid[0].ts}</text>`
         const lastTs = `<text x="${W - pad.right}" y="${H - 4}" text-anchor="end">${valid[valid.length - 1].ts}</text>`
 
+        const overlay = `<rect x="${pad.left}" y="${pad.top}" width="${innerW}" height="${innerH}" fill="transparent" class="spark-overlay" data-spark="${containerId}"/>`
+
         return `
           <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
             ${yAxis}
             ${polyline}
+            ${overlay}
             ${maxLabel}
             ${minLabel}
             ${firstTs}
@@ -271,12 +337,14 @@
           </svg>`
       }
 
-      function renderPrecipSparkline(timestamps, values) {
+      function renderPrecipSparkline(containerId, timestamps, values) {
         const valid = values
           .map((v, i) => ({ ts: timestamps[i], v }))
           .filter((p) => p.v !== null)
 
         if (valid.length < 2) return ''
+
+        sparklineDataMap.set(containerId, valid)
 
         const W = 240
         const H = 50
@@ -297,7 +365,7 @@
             const bx = x(i)
             const by = y(p.v)
             const bh = pad.top + innerH - by
-            return `<rect x="${bx}" y="${by}" width="${barWidth}" height="${bh}" fill="#4285f4" rx="1"/>`
+            return `<rect x="${bx}" y="${by}" width="${Math.max(6, barWidth)}" height="${bh}" fill="#4285f4" rx="1"/>`
           })
           .join('')
 
@@ -308,10 +376,13 @@
         const firstTs = `<text x="${pad.left}" y="${H - 4}" text-anchor="start">${valid[0].ts}</text>`
         const lastTs = `<text x="${W - pad.right}" y="${H - 4}" text-anchor="end">${valid[valid.length - 1].ts}</text>`
 
+        const overlay = `<rect x="${pad.left}" y="${pad.top}" width="${innerW}" height="${innerH}" fill="transparent" class="spark-overlay" data-spark="${containerId}"/>`
+
         return `
           <svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
             ${yAxis}
             ${bars}
+            ${overlay}
             ${maxLabel}
             ${zeroLabel}
             ${firstTs}
@@ -412,11 +483,11 @@
             try {
               const { timestamps, tempValues, precipValues } = await fetchStationHistory(id)
               container.innerHTML =
-                renderSparkline(timestamps, tempValues) || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'
+                renderSparkline('spark-' + id, timestamps, tempValues) || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'
               const precipContainer = document.getElementById('spark-prec-' + id)
               if (precipContainer) {
                 precipContainer.innerHTML =
-                  renderPrecipSparkline(timestamps, precipValues) ||
+                  renderPrecipSparkline('spark-prec-' + id, timestamps, precipValues) ||
                   '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'
               }
             } catch {
@@ -511,17 +582,18 @@
       function createMarkersSwitzerland(stationData) {
         for (const [id, station] of Object.entries(stationData)) {
           station.id = id
+          const cId = 'spark-ch-' + id
           const timestamps = station.history.map((h) => h.time)
           const values = station.history.map((h) => h.temp)
-          const sparkline = renderSparkline(timestamps, values) || ''
+          const sparkline = renderSparkline(cId, timestamps, values) || ''
 
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
             `
               <div class="station-popup">
                 <h3>${station.name}</h3>
                 <span class="current">${station.temperature != null ? station.temperature.toFixed(1) + '°C' : '&mdash;'}</span>
-                ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
-                <div class="sparkline">
+                                 ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
+                <div class="sparkline" id="${cId}">
                   ${sparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
                 </div>
               </div>
@@ -620,18 +692,19 @@
       function createMarkersGermany(stationData) {
         for (const [id, station] of Object.entries(stationData)) {
           station.id = id
+          const cId = 'spark-de-' + id
           const last4h = station.history.slice(-24)
           const timestamps = last4h.map((h) => h.time)
           const values = last4h.map((h) => h.temp)
-          const sparkline = renderSparkline(timestamps, values) || ''
+          const sparkline = renderSparkline(cId, timestamps, values) || ''
 
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
             `
               <div class="station-popup">
                 <h3>${station.name}</h3>
                 <span class="current">${station.temperature != null ? station.temperature.toFixed(1) + '°C' : '&mdash;'}</span>
-                ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
-                <div class="sparkline">
+                                 ${station.altitude != null ? `<div style="font-size:11px;color:#888;">${station.altitude}m</div>` : ''}
+                <div class="sparkline" id="${cId}">
                   ${sparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
                 </div>
               </div>
