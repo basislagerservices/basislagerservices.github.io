@@ -114,6 +114,60 @@
         transform: translate(-50%, -100%);
         margin-top: -6px;
       }
+      #search-box {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        width: 240px;
+      }
+      #station-search {
+        width: 100%;
+        padding: 4px 8px;
+        border-radius: 6px;
+        border: 1px solid #495057;
+        background: rgba(33, 37, 41, 0.85);
+        color: #fff;
+        font-size: 13px;
+        outline: none;
+      }
+      #station-search::placeholder {
+        color: #6c757d;
+      }
+      #station-search:focus {
+        border-color: #ff7800;
+      }
+      #search-results {
+        max-height: 300px;
+        overflow-y: auto;
+        margin-top: 4px;
+        border-radius: 6px;
+        background: rgba(33, 37, 41, 0.92);
+        border: 1px solid #495057;
+      }
+      #search-results:empty {
+        display: none;
+      }
+      .search-result-item {
+        padding: 4px 8px;
+        cursor: pointer;
+        font-size: 12px;
+        color: #adb5bd;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .search-result-item:hover,
+      .search-result-item.active {
+        background: #495057;
+        color: #fff;
+      }
+      .search-result-item .source-tag {
+        font-size: 10px;
+        color: #6c757d;
+        flex-shrink: 0;
+        margin-left: 8px;
+      }
     </style>
   </head>
 
@@ -166,6 +220,10 @@
         </div>
         <button id="refresh-btn" class="btn btn-sm btn-outline-light">&#x21bb;</button>
       </div>
+      <div id="search-box">
+        <input type="text" id="station-search" placeholder="Station suchen..." autocomplete="off" />
+        <div id="search-results"></div>
+      </div>
     </div>
 
     <!-- Leaflet JS -->
@@ -180,6 +238,119 @@
       const sparklineDataMap = new Map()
 
       const pad = (n) => String(n).padStart(2, '0')
+
+      const stationLookup = []
+
+      function registerStation(name, lat, lon, marker, source) {
+        stationLookup.push({ name, lat, lon, marker, source })
+      }
+
+      function clearStationLookup() {
+        stationLookup.length = 0
+      }
+
+      const searchInput = document.getElementById('station-search')
+      const searchResults = document.getElementById('search-results')
+      L.DomEvent.disableClickPropagation(searchInput)
+      L.DomEvent.disableClickPropagation(searchResults)
+      L.DomEvent.disableScrollPropagation(searchResults)
+      let searchActiveIndex = -1
+
+      function doSearch() {
+        const query = searchInput.value.trim().toLowerCase()
+        if (!query) {
+          searchResults.replaceChildren()
+          searchActiveIndex = -1
+          return
+        }
+        const matches = stationLookup.filter((s) => s.name.toLowerCase().includes(query)).slice(0, 10)
+        searchActiveIndex = -1
+        const fragment = document.createDocumentFragment()
+        matches.forEach((s, idx) => {
+          const div = document.createElement('div')
+          div.className = 'search-result-item'
+          div.innerHTML = `<span>${s.name}</span><span class="source-tag">${s.source}</span>`
+          div.addEventListener('mousedown', (e) => {
+            e.preventDefault()
+            selectStation(s)
+          })
+          div.addEventListener('mouseenter', () => {
+            searchActiveIndex = idx
+            highlightActive()
+          })
+          fragment.appendChild(div)
+        })
+        if (matches.length === 0 && query) {
+          const div = document.createElement('div')
+          div.className = 'search-result-item'
+          div.style.cursor = 'default'
+          div.style.color = '#6c757d'
+          div.textContent = 'Keine Stationen gefunden'
+          fragment.appendChild(div)
+        }
+        searchResults.replaceChildren(fragment)
+      }
+
+      function highlightActive() {
+        const items = searchResults.querySelectorAll('.search-result-item')
+        items.forEach((item, idx) => {
+          item.classList.toggle('active', idx === searchActiveIndex)
+        })
+      }
+
+      function selectStation(station) {
+        searchInput.value = ''
+        searchResults.replaceChildren()
+        searchInput.blur()
+        markers.zoomToShowLayer(station.marker, () => {
+          station.marker.openPopup()
+        })
+      }
+
+      searchInput.addEventListener('input', doSearch)
+      searchInput.addEventListener('focus', doSearch)
+      searchInput.addEventListener('keydown', (e) => {
+        const items = searchResults.querySelectorAll('.search-result-item')
+        if (e.key === 'Escape') {
+          searchInput.value = ''
+          searchResults.replaceChildren()
+          searchInput.blur()
+          searchActiveIndex = -1
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault()
+          if (items.length > 0) {
+            searchActiveIndex = Math.min(searchActiveIndex + 1, items.length - 1)
+            highlightActive()
+            items[searchActiveIndex].scrollIntoView({ block: 'nearest' })
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault()
+          if (items.length > 0) {
+            searchActiveIndex = Math.max(searchActiveIndex - 1, 0)
+            highlightActive()
+            items[searchActiveIndex].scrollIntoView({ block: 'nearest' })
+          }
+        } else if (e.key === 'Enter') {
+          e.preventDefault()
+          if (searchActiveIndex >= 0 && searchActiveIndex < items.length) {
+            const text = items[searchActiveIndex].textContent
+            if (text !== 'Keine Stationen gefunden') {
+              const query = searchInput.value.trim().toLowerCase()
+              const matches = stationLookup.filter((s) => s.name.toLowerCase().includes(query)).slice(0, 10)
+              if (matches[searchActiveIndex]) {
+                selectStation(matches[searchActiveIndex])
+              }
+            }
+          }
+        }
+      })
+
+      document.addEventListener('click', (e) => {
+        if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+          searchResults.replaceChildren()
+          searchActiveIndex = -1
+        }
+      })
 
       const tooltip = document.getElementById('spark-tooltip')
 
@@ -477,6 +648,7 @@
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
             buildPopupContent(station)
           )
+          registerStation(station.name, station.lat, station.lon, marker, 'AT')
 
           marker.on('popupopen', async () => {
             const container = document.getElementById('spark-' + id)
@@ -651,6 +823,7 @@
             `
           )
           markers.addLayer(marker)
+          registerStation(station.name, station.lat, station.lon, marker, 'CH')
         }
       }
 
@@ -773,6 +946,7 @@
             `
           )
           markers.addLayer(marker)
+          registerStation(station.name, station.lat, station.lon, marker, 'DE')
         }
       }
 
@@ -798,6 +972,7 @@
       async function refreshData() {
         markers.clearLayers()
         map.removeLayer(markers)
+        clearStationLookup()
 
         if (sources.at) {
           try {
@@ -843,6 +1018,10 @@
       refreshBtn.addEventListener('click', doRefresh)
 
       document.getElementById('controls').addEventListener('dblclick', (e) => {
+        e.stopPropagation()
+      })
+
+      document.getElementById('search-box').addEventListener('dblclick', (e) => {
         e.stopPropagation()
       })
 
