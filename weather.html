@@ -842,12 +842,12 @@
                     if (tsParts.length >= 2) {
                       const dateStr = tsParts[0]
                       const timeParts = tsParts[1].split(':')
-                      if (dateStr.length >= 8 && timeParts.length >= 2) {
+                      if (dateStr.length >= 10 && timeParts.length >= 2) {
                         const d = new Date(
                           Date.UTC(
-                            dateStr.slice(0, 4),
-                            dateStr.slice(4, 6) - 1,
-                            dateStr.slice(6, 8),
+                            dateStr.slice(6, 10),
+                            dateStr.slice(3, 5) - 1,
+                            dateStr.slice(0, 2),
                             timeParts[0],
                             timeParts[1]
                           )
