@@ -43,24 +43,34 @@
         left: 50%;
         transform: translateX(-50%);
         z-index: 1000;
-        background: rgba(33, 37, 41, 0.85);
-        border-radius: 8px;
+        background: rgba(33, 37, 41, 0.92);
+        border: 1px solid #495057;
+        border-radius: 6px;
         padding: 6px 10px;
         display: flex;
         align-items: center;
+        justify-content: space-between;
         gap: 10px;
       }
       #controls .btn-outline-light {
-        --bs-btn-color: #adb5bd;
+        --bs-btn-color: #9eaab8;
         --bs-btn-border-color: #495057;
         --bs-btn-hover-bg: #495057;
-        --bs-btn-active-bg: #198754;
-        --bs-btn-active-border-color: #198754;
+        --bs-btn-hover-color: #ced4da;
+        --bs-btn-active-bg: #ff7800;
+        --bs-btn-active-border-color: #ff7800;
+        --bs-btn-active-color: #fff;
       }
       #controls .btn-check:checked + .btn-outline-light {
-        background-color: #198754;
-        border-color: #198754;
+        background-color: #ff7800;
+        border-color: #ff7800;
         color: #fff;
+      }
+      #controls #refresh-btn {
+        --bs-btn-color: #9eaab8;
+      }
+      #controls #refresh-btn:hover {
+        --bs-btn-color: #ced4da;
       }
       @keyframes spin {
         from {
