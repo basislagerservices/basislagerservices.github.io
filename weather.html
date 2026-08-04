@@ -336,6 +336,38 @@
       .marker-temp-label::before {
         display: none;
       }
+      @media (max-width: 768px) {
+        #controls {
+          left: 0;
+          right: 0;
+          transform: none;
+          width: 320px;
+          max-width: calc(100vw - 20px);
+          margin: 0 auto;
+        }
+        #controls > * {
+          min-width: 0;
+          flex-shrink: 1;
+        }
+        #controls .btn {
+          padding-left: 6px;
+          padding-right: 6px;
+        }
+        #temp-sidebar {
+          top: 62px;
+          left: 0;
+          right: 0;
+          transform: none;
+          bottom: auto;
+          max-height: 50vh;
+          width: 320px;
+          max-width: calc(100vw - 20px);
+          margin: 0 auto;
+        }
+        .sidebar-resize-handle {
+          display: none;
+        }
+      }
     </style>
   </head>
 
@@ -485,7 +517,17 @@
       const savedCollapsed = localStorage.getItem('tempSidebarCollapsed') === 'true'
       if (savedCollapsed) tempSidebar.classList.add('collapsed')
       const savedWidth = parseInt(localStorage.getItem('tempSidebarWidth'))
-      if (savedWidth) tempSidebar.style.width = savedWidth + 'px'
+      let lastDesktopWidth = savedWidth || 300
+      if (savedWidth && window.innerWidth > 768) tempSidebar.style.width = savedWidth + 'px'
+
+      window.addEventListener('resize', () => {
+        if (window.innerWidth <= 768) {
+          if (tempSidebar.style.width) lastDesktopWidth = parseInt(tempSidebar.style.width)
+          tempSidebar.style.width = ''
+        } else {
+          if (!tempSidebar.style.width) tempSidebar.style.width = lastDesktopWidth + 'px'
+        }
+      })
 
       const resizeHandle = tempSidebar.querySelector('.sidebar-resize-handle')
       let resizing = false
@@ -510,7 +552,7 @@
         resizing = false
         document.body.style.cursor = ''
         document.body.style.userSelect = ''
-        localStorage.setItem('tempSidebarWidth', tempSidebar.offsetWidth)
+        if (window.innerWidth > 768) localStorage.setItem('tempSidebarWidth', tempSidebar.offsetWidth)
       })
       document.querySelector('.temp-sidebar-header').addEventListener('click', (e) => {
         if (e.target.closest('.sort-btn')) return
