@@ -1351,7 +1351,7 @@
                 ? renderPrecipSparkline(pId, pTimestamps, pValues)
                 : ''
             precipHtml = `
-                <div style="font-size:12px;font-weight:600;color:#666;margin-top:8px;">Niederschlag (letzte 24h)</div>
+                <div style="font-size:12px;font-weight:600;color:#666;margin-top:8px;">Niederschlag</div>
                 <span class="current">${station.precipitation != null ? station.precipitation.toFixed(1) + ' mm' : '&mdash;'}</span>
                 <div class="sparkline" id="${pId}">
                   ${pSparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
@@ -1462,6 +1462,55 @@
                     history.push({ time, temp })
                   }
                 }
+                let precipHistory = null
+                let precipitation = null
+                try {
+                  const precipBaseUrl =
+                    CORS_PROXY +
+                    'https://opendata.dwd.de/climate_environment/CDC/observations_germany/climate/10_minutes/precipitation/now/'
+                  const precipResponse = await fetch(`${precipBaseUrl}10minutenwerte_nieder_${station.id}_now.zip`, {
+                    headers: { 'Session-ID': SESSION_ID },
+                  })
+                  if (precipResponse.ok) {
+                    const precipBlob = await precipResponse.blob()
+                    const precipZip = await window.JSZip.loadAsync(precipBlob)
+                    const precipFilenames = Object.keys(precipZip.files).filter((f) => !f.startsWith('__MACOSX'))
+                    if (precipFilenames.length > 0) {
+                      const precipContent = await precipZip.file(precipFilenames[0]).async('string')
+                      const precipLines = precipContent.split('\n')
+                      const pTsIdx = 1
+                      const pValIdx = 5
+                      precipHistory = []
+                      for (let k = 1; k < precipLines.length; k++) {
+                        const parts = precipLines[k].split(';')
+                        if (parts.length < 6) continue
+                        const precip = parseFloat(parts[pValIdx].trim())
+                        if (!isNaN(precip) && precip !== -999) {
+                          const tsRaw = parts[pTsIdx]?.trim() || ''
+                          let time = ''
+                          if (tsRaw.length >= 12) {
+                            const d = new Date(
+                              Date.UTC(
+                                tsRaw.slice(0, 4),
+                                tsRaw.slice(4, 6) - 1,
+                                tsRaw.slice(6, 8),
+                                tsRaw.slice(8, 10),
+                                tsRaw.slice(10, 12)
+                              )
+                            )
+                            time = `${pad(d.getHours())}:${pad(d.getMinutes())}`
+                          }
+                          precipHistory.push({ time, precip })
+                        }
+                      }
+                      if (precipHistory.length > 0) {
+                        precipitation = precipHistory.slice(-24).reduce((sum, h) => sum + h.precip, 0)
+                      }
+                    }
+                  }
+                } catch {
+                  // Skip failed precipitation fetches
+                }
                 if (history.length > 0) {
                   stationData[station.id] = {
                     name: station.name,
@@ -1470,6 +1519,10 @@
                     lon: station.lon,
                     temperature: history[history.length - 1].temp,
                     history,
+                  }
+                  if (precipHistory && precipHistory.length > 0) {
+                    stationData[station.id].precipHistory = precipHistory
+                    stationData[station.id].precipitation = precipitation
                   }
                 }
               } catch {
@@ -1491,6 +1544,24 @@
           const values = last4h.map((h) => h.temp)
           const sparkline = renderSparkline(cId, timestamps, values) || ''
 
+          let precipHtml = ''
+          if (station.precipHistory && station.precipHistory.length > 0) {
+            const pId = 'spark-prec-de-' + id
+            const pLast4h = station.precipHistory.slice(-24)
+            const pTimestamps = pLast4h.map((h) => h.time)
+            const pValues = pLast4h.map((h) => h.precip)
+            const pSparkline =
+              pTimestamps.length >= 2
+                ? renderPrecipSparkline(pId, pTimestamps, pValues)
+                : ''
+            precipHtml = `
+                <div style="font-size:12px;font-weight:600;color:#666;margin-top:8px;">Niederschlag</div>
+                <span class="current">${station.precipitation != null ? station.precipitation.toFixed(1) + ' mm' : '&mdash;'}</span>
+                <div class="sparkline" id="${pId}">
+                  ${pSparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
+                </div>`
+          }
+
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
             `
               <div class="station-popup">
@@ -1500,6 +1571,7 @@
                 <div class="sparkline" id="${cId}">
                   ${sparkline || '<span style="font-size:11px;color:#aaa;">Keine Daten</span>'}
                 </div>
+                ${precipHtml}
               </div>
             `
           )
@@ -1513,7 +1585,7 @@
           }
           markers.addLayer(marker)
           registerStation(station.name, station.lat, station.lon, marker, 'DE')
-          stationTempList.push({ name: station.name, temp: station.temperature, precip: null, marker, source: 'DE' })
+          stationTempList.push({ name: station.name, temp: station.temperature, precip: station.precipitation ?? null, marker, source: 'DE' })
         }
       }
 
