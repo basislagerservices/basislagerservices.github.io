@@ -116,10 +116,12 @@
       }
       #search-box {
         position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
+        bottom: 10px;
+        left: 10px;
+        z-index: 1001;
         width: 240px;
+        display: flex;
+        flex-direction: column-reverse;
       }
       #station-search {
         width: 100%;
@@ -142,13 +144,127 @@
       #search-results {
         max-height: 300px;
         overflow-y: auto;
-        margin-top: 4px;
+        margin-bottom: 4px;
         border-radius: 6px;
         background: rgba(33, 37, 41, 0.92);
         border: 1px solid #495057;
       }
       #search-results:empty {
         display: none;
+      }
+      #temp-sidebar {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        width: 300px;
+        bottom: 10px;
+        border-radius: 6px;
+        background: rgba(33, 37, 41, 0.92);
+        border: 1px solid #495057;
+        display: flex;
+        flex-direction: column;
+      }
+      #temp-sidebar:empty {
+        display: none;
+      }
+      #temp-sidebar.collapsed {
+        bottom: auto;
+      }
+      #temp-sidebar.collapsed #temp-sidebar-list {
+        display: none;
+      }
+      .temp-sidebar-header {
+        padding: 4px 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #6c757d;
+        border-bottom: 1px solid #495057;
+        cursor: pointer;
+        user-select: none;
+        flex-shrink: 0;
+        display: grid;
+        grid-template-columns: 1fr 30px 56px 52px;
+        align-items: center;
+        gap: 4px;
+      }
+      .temp-sidebar-header:hover {
+        color: #adb5bd;
+      }
+      .temp-sidebar-sorts {
+        display: flex;
+        gap: 4px;
+        align-items: center;
+      }
+      .sort-btn {
+        cursor: pointer;
+        padding: 0 2px;
+        border-radius: 3px;
+        font-size: 11px;
+        color: #6c757d;
+        text-align: center;
+      }
+      .sort-btn:hover {
+        color: #adb5bd;
+        background: #495057;
+      }
+      .sort-btn.active {
+        color: #ff7800;
+        font-weight: 700;
+      }
+      #temp-sidebar-list {
+        overflow-y: auto;
+        flex: 1;
+        min-height: 0;
+        scrollbar-width: thin;
+        scrollbar-color: #495057 transparent;
+      }
+      #temp-sidebar-list:empty {
+        display: none;
+      }
+      #temp-sidebar-list::-webkit-scrollbar {
+        width: 6px;
+      }
+      #temp-sidebar-list::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      #temp-sidebar-list::-webkit-scrollbar-thumb {
+        background: #495057;
+        border-radius: 3px;
+      }
+      #temp-sidebar-list::-webkit-scrollbar-thumb:hover {
+        background: #6c757d;
+      }
+      .temp-sidebar-item {
+        padding: 3px 8px;
+        cursor: pointer;
+        font-size: 12px;
+        color: #adb5bd;
+        display: grid;
+        grid-template-columns: 1fr 30px 56px 52px;
+        align-items: center;
+        gap: 4px;
+      }
+      .temp-sidebar-item:hover {
+        background: #495057;
+        color: #fff;
+      }
+      .temp-sidebar-item .temp-val,
+      .temp-sidebar-item .precip-val {
+        font-weight: 700;
+        text-align: right;
+      }
+      .temp-sidebar-item .temp-val {
+        color: #ff7800;
+      }
+      .temp-sidebar-item .precip-val {
+        color: #6ea8fe;
+        font-size: 11px;
+      }
+      .temp-sidebar-item .source-tag {
+        font-size: 10px;
+        color: #6c757d;
+        text-align: right;
       }
       .search-result-item {
         padding: 4px 8px;
@@ -254,6 +370,15 @@
         <input type="text" id="station-search" placeholder="Station suchen..." autocomplete="off" />
         <div id="search-results"></div>
       </div>
+      <div id="temp-sidebar">
+        <div class="temp-sidebar-header">
+          <span>Stationen</span>
+          <span></span>
+          <span class="sort-btn active" data-sort="temp">T ▾</span>
+          <span class="sort-btn" data-sort="precip">N</span>
+        </div>
+        <div id="temp-sidebar-list"></div>
+      </div>
     </div>
 
     <!-- Leaflet JS -->
@@ -270,6 +395,7 @@
       const pad = (n) => String(n).padStart(2, '0')
 
       const stationLookup = []
+      const stationTempList = []
 
       function registerStation(name, lat, lon, marker, source) {
         stationLookup.push({ name, lat, lon, marker, source })
@@ -279,11 +405,76 @@
         stationLookup.length = 0
       }
 
+      function clearStationTempList() {
+        stationTempList.length = 0
+      }
+
+      let sortMetric = 'temp'
+      let sortDir = 'desc'
+
+      function renderTempSidebar() {
+        const sorted = [...stationTempList].sort((a, b) => {
+          const va = a[sortMetric] ?? -Infinity
+          const vb = b[sortMetric] ?? -Infinity
+          return sortDir === 'desc' ? vb - va : va - vb
+        })
+        if (sorted.length === 0) {
+          tempSidebarList.replaceChildren()
+          return
+        }
+        const fragment = document.createDocumentFragment()
+        sorted.forEach((s) => {
+          const div = document.createElement('div')
+          div.className = 'temp-sidebar-item'
+          const tempStr = s.temp != null ? `<span class="temp-val">${s.temp.toFixed(1)}°C</span>` : '<span class="temp-val">—</span>'
+          const precipStr = s.precip != null ? `<span class="precip-val">${s.precip.toFixed(1)}mm</span>` : '<span class="precip-val">—</span>'
+          div.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</span><span class="source-tag">${s.source}</span>${tempStr}${precipStr}`
+          div.addEventListener('click', () => {
+            markers.zoomToShowLayer(s.marker, () => {
+              s.marker.openPopup()
+            })
+          })
+          fragment.appendChild(div)
+        })
+        tempSidebarList.replaceChildren(fragment)
+      }
+
       const searchInput = document.getElementById('station-search')
       const searchResults = document.getElementById('search-results')
       L.DomEvent.disableClickPropagation(searchInput)
       L.DomEvent.disableClickPropagation(searchResults)
       L.DomEvent.disableScrollPropagation(searchResults)
+      const tempSidebar = document.getElementById('temp-sidebar')
+      const tempSidebarList = document.getElementById('temp-sidebar-list')
+      L.DomEvent.disableClickPropagation(tempSidebar)
+      L.DomEvent.disableScrollPropagation(tempSidebarList)
+
+      const savedCollapsed = localStorage.getItem('tempSidebarCollapsed') === 'true'
+      if (savedCollapsed) tempSidebar.classList.add('collapsed')
+      document.querySelector('.temp-sidebar-header').addEventListener('click', (e) => {
+        if (e.target.closest('.sort-btn')) return
+        tempSidebar.classList.toggle('collapsed')
+        localStorage.setItem('tempSidebarCollapsed', tempSidebar.classList.contains('collapsed'))
+      })
+      const sortBtns = document.querySelectorAll('.sort-btn')
+      sortBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const metric = btn.dataset.sort
+          if (sortMetric === metric) {
+            sortDir = sortDir === 'desc' ? 'asc' : 'desc'
+          } else {
+            sortMetric = metric
+            sortDir = 'desc'
+          }
+          sortBtns.forEach((b) => {
+            b.classList.toggle('active', b.dataset.sort === sortMetric)
+            b.textContent = b.dataset.sort === 'temp'
+              ? `T ${sortDir === 'desc' ? '▾' : '▴'}`
+              : `N ${sortDir === 'desc' ? '▾' : '▴'}`
+          })
+          renderTempSidebar()
+        })
+      })
       let searchActiveIndex = -1
       let locationDebounceTimer = null
       let currentLocations = []
@@ -778,6 +969,7 @@
             })
           }
           registerStation(station.name, station.lat, station.lon, marker, 'AT')
+          stationTempList.push({ name: station.name, temp: station.temperature, precip: station.precipitation ?? null, marker, source: 'AT' })
 
           marker.on('popupopen', async () => {
             const container = document.getElementById('spark-' + id)
@@ -961,6 +1153,7 @@
           }
           markers.addLayer(marker)
           registerStation(station.name, station.lat, station.lon, marker, 'CH')
+          stationTempList.push({ name: station.name, temp: station.temperature, precip: station.precipitation ?? null, marker, source: 'CH' })
         }
       }
 
@@ -1092,6 +1285,7 @@
           }
           markers.addLayer(marker)
           registerStation(station.name, station.lat, station.lon, marker, 'DE')
+          stationTempList.push({ name: station.name, temp: station.temperature, precip: null, marker, source: 'DE' })
         }
       }
 
@@ -1118,6 +1312,7 @@
         markers.clearLayers()
         map.removeLayer(markers)
         clearStationLookup()
+        clearStationTempList()
 
         if (sources.at) {
           try {
@@ -1147,6 +1342,7 @@
         }
 
         map.addLayer(markers)
+        renderTempSidebar()
       }
 
       const refreshBtn = document.getElementById('refresh-btn')
@@ -1167,6 +1363,10 @@
       })
 
       document.getElementById('search-box').addEventListener('dblclick', (e) => {
+        e.stopPropagation()
+      })
+
+      document.getElementById('temp-sidebar').addEventListener('dblclick', (e) => {
         e.stopPropagation()
       })
 
