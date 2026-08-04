@@ -152,6 +152,28 @@
       #search-results:empty {
         display: none;
       }
+      .sidebar-resize-handle {
+        position: absolute;
+        left: -4px;
+        top: 0;
+        bottom: 0;
+        width: 8px;
+        cursor: col-resize;
+        z-index: 10;
+      }
+      .sidebar-resize-handle::after {
+        content: '';
+        position: absolute;
+        left: 3px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: transparent;
+        transition: background 0.15s;
+      }
+      .sidebar-resize-handle:hover::after {
+        background: #ff7800;
+      }
       #temp-sidebar {
         position: absolute;
         top: 10px;
@@ -371,6 +393,7 @@
         <div id="search-results"></div>
       </div>
       <div id="temp-sidebar">
+        <div class="sidebar-resize-handle"></div>
         <div class="temp-sidebar-header">
           <span>Stationen</span>
           <span></span>
@@ -438,7 +461,7 @@
           div.className = 'temp-sidebar-item'
           const tempStr = s.temp != null ? `<span class="temp-val">${s.temp.toFixed(1)}°C</span>` : '<span class="temp-val">—</span>'
           const precipStr = s.precip != null ? `<span class="precip-val">${s.precip.toFixed(1)}mm</span>` : '<span class="precip-val">—</span>'
-          div.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${s.name}</span><span class="source-tag">${s.source}</span>${tempStr}${precipStr}`
+          div.innerHTML = `<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${s.name.replace(/"/g, '&quot;')}">${s.name}</span><span class="source-tag">${s.source}</span>${tempStr}${precipStr}`
           div.addEventListener('click', () => {
             markers.zoomToShowLayer(s.marker, () => {
               s.marker.openPopup()
@@ -461,6 +484,34 @@
 
       const savedCollapsed = localStorage.getItem('tempSidebarCollapsed') === 'true'
       if (savedCollapsed) tempSidebar.classList.add('collapsed')
+      const savedWidth = parseInt(localStorage.getItem('tempSidebarWidth'))
+      if (savedWidth) tempSidebar.style.width = savedWidth + 'px'
+
+      const resizeHandle = tempSidebar.querySelector('.sidebar-resize-handle')
+      let resizing = false
+      let startX, startWidth
+      resizeHandle.addEventListener('mousedown', (e) => {
+        e.preventDefault()
+        e.stopPropagation()
+        resizing = true
+        startX = e.clientX
+        startWidth = tempSidebar.offsetWidth
+        document.body.style.cursor = 'col-resize'
+        document.body.style.userSelect = 'none'
+      })
+      document.addEventListener('mousemove', (e) => {
+        if (!resizing) return
+        const delta = startX - e.clientX
+        const newWidth = Math.max(200, Math.min(600, startWidth + delta))
+        tempSidebar.style.width = newWidth + 'px'
+      })
+      document.addEventListener('mouseup', () => {
+        if (!resizing) return
+        resizing = false
+        document.body.style.cursor = ''
+        document.body.style.userSelect = ''
+        localStorage.setItem('tempSidebarWidth', tempSidebar.offsetWidth)
+      })
       document.querySelector('.temp-sidebar-header').addEventListener('click', (e) => {
         if (e.target.closest('.sort-btn')) return
         tempSidebar.classList.toggle('collapsed')
