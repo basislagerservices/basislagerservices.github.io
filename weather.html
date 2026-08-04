@@ -409,14 +409,24 @@
         stationTempList.length = 0
       }
 
-      let sortMetric = 'temp'
-      let sortDir = 'desc'
+      let activeSortMetric = 'temp'
+      let sortState = 0
+
+      function getSortConfig() {
+        if (sortState === 2) return { metric: 'alpha', dir: 'asc' }
+        return { metric: activeSortMetric, dir: sortState === 0 ? 'desc' : 'asc' }
+      }
 
       function renderTempSidebar() {
+        const { metric, dir } = getSortConfig()
         const sorted = [...stationTempList].sort((a, b) => {
-          const va = a[sortMetric] ?? -Infinity
-          const vb = b[sortMetric] ?? -Infinity
-          return sortDir === 'desc' ? vb - va : va - vb
+          if (metric === 'alpha') {
+            const cmp = a.name.localeCompare(b.name)
+            return dir === 'desc' ? -cmp : cmp
+          }
+          const va = a[metric] ?? -Infinity
+          const vb = b[metric] ?? -Infinity
+          return dir === 'desc' ? vb - va : va - vb
         })
         if (sorted.length === 0) {
           tempSidebarList.replaceChildren()
@@ -460,17 +470,17 @@
       sortBtns.forEach((btn) => {
         btn.addEventListener('click', () => {
           const metric = btn.dataset.sort
-          if (sortMetric === metric) {
-            sortDir = sortDir === 'desc' ? 'asc' : 'desc'
+          if (activeSortMetric === metric) {
+            sortState = (sortState + 1) % 3
           } else {
-            sortMetric = metric
-            sortDir = 'desc'
+            activeSortMetric = metric
+            sortState = 0
           }
+          const states = ['▾', '▴', '']
           sortBtns.forEach((b) => {
-            b.classList.toggle('active', b.dataset.sort === sortMetric)
-            b.textContent = b.dataset.sort === 'temp'
-              ? `T ${sortDir === 'desc' ? '▾' : '▴'}`
-              : `N ${sortDir === 'desc' ? '▾' : '▴'}`
+            b.classList.toggle('active', b.dataset.sort === activeSortMetric && sortState !== 2)
+            const label = b.dataset.sort === 'temp' ? 'T' : 'N'
+            b.textContent = `${label} ${b.dataset.sort === activeSortMetric ? states[sortState] : ''}`
           })
           renderTempSidebar()
         })
