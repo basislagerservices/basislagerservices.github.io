@@ -184,6 +184,20 @@
         margin-top: 2px;
         cursor: default;
       }
+      .marker-temp-label {
+        background: rgba(33, 37, 41, 0.85);
+        border: none;
+        color: #ff7800;
+        font-size: 12px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 4px;
+        white-space: nowrap;
+        box-shadow: none;
+      }
+      .marker-temp-label::before {
+        display: none;
+      }
     </style>
   </head>
 
@@ -755,6 +769,14 @@
           const marker = L.marker([station.lat, station.lon], { temp: station.temperature }).bindPopup(
             buildPopupContent(station)
           )
+          if (station.temperature != null) {
+            marker.bindTooltip(`${station.temperature.toFixed(1)}°C`, {
+              permanent: true,
+              direction: 'bottom',
+              className: 'marker-temp-label',
+              offset: [0, 24],
+            })
+          }
           registerStation(station.name, station.lat, station.lon, marker, 'AT')
 
           marker.on('popupopen', async () => {
@@ -929,6 +951,14 @@
               </div>
             `
           )
+          if (station.temperature != null) {
+            marker.bindTooltip(`${station.temperature.toFixed(1)}°C`, {
+              permanent: true,
+              direction: 'bottom',
+              className: 'marker-temp-label',
+              offset: [0, 24],
+            })
+          }
           markers.addLayer(marker)
           registerStation(station.name, station.lat, station.lon, marker, 'CH')
         }
@@ -1052,6 +1082,14 @@
               </div>
             `
           )
+          if (station.temperature != null) {
+            marker.bindTooltip(`${station.temperature.toFixed(1)}°C`, {
+              permanent: true,
+              direction: 'bottom',
+              className: 'marker-temp-label',
+              offset: [0, 24],
+            })
+          }
           markers.addLayer(marker)
           registerStation(station.name, station.lat, station.lon, marker, 'DE')
         }
