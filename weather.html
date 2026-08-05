@@ -1105,9 +1105,21 @@
 
       function buildPopupContent(station) {
         const name = station.name
-        const temp =
+        const tempVal =
           station.temperature != null ? `<span class="current">${station.temperature.toFixed(1)}°C</span>` : '&mdash;'
         const altitude = station.altitude != null ? `${station.altitude}m` : ''
+
+        let minmaxHtml = ''
+        if (station.temperature_min != null && station.temperature_max != null) {
+          minmaxHtml = `<div style="font-size:11px;color:#666;text-align:right;line-height:1.3;">
+            <div>min: ${station.temperature_min.toFixed(1)}°C</div>
+            <div>max: ${station.temperature_max.toFixed(1)}°C</div>
+          </div>`
+        }
+
+        const tempRow = minmaxHtml
+          ? `<div style="display:flex;justify-content:space-between;align-items:center;">${tempVal}${minmaxHtml}</div>`
+          : tempVal
 
         const precip =
           station.precipitation != null
@@ -1117,7 +1129,7 @@
         return `
           <div class="station-popup">
             <h3>${name}</h3>
-            ${temp}
+            ${tempRow}
             ${altitude ? `<div style="font-size:11px;color:#888;">${altitude}</div>` : ''}
             <div class="sparkline" id="spark-${station.id}">
               <div style="font-size:11px;color:#aaa;padding:8px 0;">Lade Verlauf&hellip;</div>
@@ -1153,7 +1165,7 @@
         }
 
         const idsParam = encodeURIComponent(Object.keys(stationData).join(','))
-        const url = `https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min?parameters=TLAM,FFAM,FFX,RR&station_ids=${idsParam}&output_format=geojson`
+        const url = `https://dataset.api.hub.geosphere.at/v1/station/current/tawes-v1-10min?parameters=TLAM,FFAM,FFX,RR,TLMAX,TLMIN&station_ids=${idsParam}&output_format=geojson`
 
         const tempResponse = await fetch(url)
         if (!tempResponse.ok) throw new Error('connection error')
@@ -1176,6 +1188,18 @@
           const rrValue = rrValues?.filter((v) => v !== null)[0]
           if (typeof rrValue !== 'undefined') {
             stationData[stationId]['precipitation'] = rrValue
+          }
+
+          const tlmaxValues = station.properties.parameters.TLMAX?.data
+          const tlmaxValue = tlmaxValues?.filter((v) => v !== null)[0]
+          if (typeof tlmaxValue !== 'undefined') {
+            stationData[stationId]['temperature_max'] = tlmaxValue
+          }
+
+          const tlminValues = station.properties.parameters.TLMIN?.data
+          const tlminValue = tlminValues?.filter((v) => v !== null)[0]
+          if (typeof tlminValue !== 'undefined') {
+            stationData[stationId]['temperature_min'] = tlminValue
           }
         }
 
