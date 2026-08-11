@@ -36,12 +36,13 @@ export class PlecoLayer extends Layer {
       target: null,
     }
 
+    this.kisses = []
+
     this.canvas.addEventListener('click', (e) => {
       const rect = this.canvas.getBoundingClientRect()
-      this.pleco.target = {
-        x: Math.max(MARGIN, Math.min(this.canvas.width - MARGIN, e.clientX - rect.left)),
-        y: Math.max(MARGIN, Math.min(this.canvas.height - MARGIN, e.clientY - rect.top)),
-      }
+      const x = Math.max(MARGIN, Math.min(this.canvas.width - MARGIN, e.clientX - rect.left))
+      const y = Math.max(MARGIN, Math.min(this.canvas.height - MARGIN, e.clientY - rect.top))
+      this.pleco.target = { x, y }
     })
   }
 
@@ -54,6 +55,12 @@ export class PlecoLayer extends Layer {
       const dist = Math.sqrt(dx * dx + dy * dy)
 
       if (dist < 4) {
+        this.kisses.push({
+          x: p.target.x,
+          y: p.target.y,
+          createdAt: Date.now(),
+          rotation: (Math.random() - 0.5) * 0.4,
+        })
         p.target = null
       } else {
         const targetAngle = Math.atan2(dy, dx)
@@ -85,20 +92,46 @@ export class PlecoLayer extends Layer {
     if (p.y > this.canvas.height - MARGIN) { p.y = this.canvas.height - MARGIN; this.#bounce(p) }
 
     this.#draw(p)
+    this.#drawKisses()
   }
 
   resize(oldWidth, oldHeight, newWidth, newHeight) {
-    this.pleco.x *= newWidth / oldWidth
-    this.pleco.y *= newHeight / oldHeight
+    const sx = newWidth / oldWidth
+    const sy = newHeight / oldHeight
+    this.pleco.x *= sx
+    this.pleco.y *= sy
     if (this.pleco.target) {
-      this.pleco.target.x *= newWidth / oldWidth
-      this.pleco.target.y *= newHeight / oldHeight
+      this.pleco.target.x *= sx
+      this.pleco.target.y *= sy
+    }
+    for (const kiss of this.kisses) {
+      kiss.x *= sx
+      kiss.y *= sy
     }
   }
 
   #bounce(p) {
     p.angle = Math.random() * Math.PI * 2
     p.speed = 0.05 + Math.random() * 0.15
+  }
+
+  #drawKisses() {
+    const now = Date.now()
+    this.kisses = this.kisses.filter((k) => now - k.createdAt < 10000)
+
+    for (const kiss of this.kisses) {
+      const age = (now - kiss.createdAt) / 10000
+      const alpha = 1 - age
+      this.ctx.save()
+      this.ctx.translate(kiss.x, kiss.y)
+      this.ctx.rotate(kiss.rotation)
+      this.ctx.globalAlpha = alpha
+      this.ctx.font = '36px serif'
+      this.ctx.textAlign = 'center'
+      this.ctx.textBaseline = 'middle'
+      this.ctx.fillText('💋', 0, 0)
+      this.ctx.restore()
+    }
   }
 
   #draw(p) {
