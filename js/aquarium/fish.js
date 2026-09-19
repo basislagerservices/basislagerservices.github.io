@@ -24,6 +24,8 @@ export const DEFAULT_FACES = [
   '😸', '😹', '😺', '😻', '😼', '😽', '🦁', '🦊',
 ]
 
+const PICTURE_USERS = { PerfectStranger78: 'assets/ps.png' }
+
 /**
  * Animate fish with faces onto the canvas when a posting is published.
  */
@@ -34,6 +36,12 @@ export class FishLayer extends Layer {
     this.inactivityLimit = inactivityLimit
     this.faces = faces
     this.activeUsers = {}
+    this.pictureUsers = {}
+    for (const [name, src] of Object.entries(PICTURE_USERS)) {
+      const image = new Image()
+      image.src = src
+      this.pictureUsers[name] = image
+    }
   }
 
   animate() {
@@ -85,7 +93,7 @@ export class FishLayer extends Layer {
         speed: 0.5 + Math.random() * 0.5,
         lastActive: published,
         name: p.user,
-        face: randomElement(this.faces),
+        face: this.pictureUsers[p.user] ?? randomElement(this.faces),
       }
     } else {
       this.activeUsers[p.user].lastActive = Math.max(published, this.activeUsers[p.user].lastActive)
@@ -137,10 +145,22 @@ export class FishLayer extends Layer {
     this.ctx.restore()
 
     // Add the face.
-    this.ctx.font = '28px sans-serif'
-    this.ctx.textAlign = 'center'
-    this.ctx.fillStyle = 'rgba(255, 255, 255, 1.00)'
-    this.ctx.fillText(fish.face, fish.x + fish.direction * 25, fish.y + 8)
+    if (fish.face instanceof Image) {
+      const size = 36
+      const cx = fish.x + fish.direction * 25
+      const cy = fish.y + 8
+      this.ctx.save()
+      this.ctx.beginPath()
+      this.ctx.arc(cx, cy, size / 2, 0, Math.PI * 2)
+      this.ctx.clip()
+      this.ctx.drawImage(fish.face, cx - size / 2, cy - size / 2, size, size)
+      this.ctx.restore()
+    } else {
+      this.ctx.font = '28px sans-serif'
+      this.ctx.textAlign = 'center'
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 1.00)'
+      this.ctx.fillText(fish.face, fish.x + fish.direction * 25, fish.y + 8)
+    }
 
     // --- Draw username label ---
     this.ctx.font = '14px sans-serif'
