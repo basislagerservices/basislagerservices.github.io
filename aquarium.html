@@ -44,7 +44,7 @@
 
       // Default values.
       let tickerId = 3000000347298
-      let jumpEmoji = '🎂'
+      let jumpEmoji = '⛄'
       let initThreads = 2
       let initPostings = 300
       let timeoutWindow = 3600
@@ -73,7 +73,7 @@
 
       // prettier-ignore
       const layers = [
-        //new SnowLayer(canvas, 30),
+        new SnowLayer(canvas, 30),
         new BubbleLayer(canvas, 30),
         new JumpEmojiLayer(canvas, jumpEmoji),
         new FishLayer(canvas, timeoutWindow * 1000),
